@@ -1,4 +1,4 @@
-import { db } from "./firebase-config.js?v=20260713-stripe-google-login1";
+import { auth, db } from "./firebase-config.js?v=20260713-stripe-google-login1";
 import {
   collection,
   deleteDoc,
@@ -92,6 +92,11 @@ function isConnectivityError(error) {
     message.includes("network error");
 }
 
+function isPermissionDenied(error) {
+  const code = errorCode(error);
+  return code === "permission-denied" || code === "firestore/permission-denied";
+}
+
 function setCloudState(state, error = null) {
   cloudState = state;
   cloudLastError = error || null;
@@ -103,6 +108,42 @@ function setCloudState(state, error = null) {
       message: error?.message || ""
     }
   }));
+}
+
+async function refreshFirestoreAuth(operation, expectedUid = "") {
+  await auth.authStateReady?.();
+  const user = auth.currentUser;
+  const uid = String(user?.uid || "");
+  if (!uid) {
+    const error = new Error(`${operation}: Firebase SDK har ingen aktiv bruger.`);
+    error.code = "auth/user-not-authenticated";
+    throw error;
+  }
+  if (expectedUid && uid !== expectedUid) {
+    const error = new Error(`${operation}: Firebase SDK UID matcher ikke den aktive Work4it-konto.`);
+    error.code = "auth/uid-mismatch";
+    throw error;
+  }
+  await user.getIdToken(true);
+  activeUid = uid;
+  cloudEnabled = true;
+  return uid;
+}
+
+async function withPermissionRetry(operation, pathSegments, task, uid = activeUid) {
+  try {
+    return await task();
+  } catch (error) {
+    if (!isPermissionDenied(error)) throw error;
+    reportFirestoreError(`${operation}:permissionRetry`, pathSegments, error, uid);
+    await refreshFirestoreAuth(operation, uid);
+    try {
+      return await task();
+    } catch (retryError) {
+      reportFirestoreError(`${operation}:permissionRetryFailed`, pathSegments, retryError, uid);
+      throw retryError;
+    }
+  }
 }
 
 function dispatchFallbackActive(error, phase = "initialize") {
@@ -292,12 +333,34 @@ async function requireCloudUser(operation = "Firestore") {
     throw error;
   }
   const pendingInitialization = initializationByUid.get(uid);
-  if (pendingInitialization) await pendingInitialization;
+  if (pendingInitialization) {
+    try {
+      await pendingInitialization;
+    } catch (error) {
+      if (!isPermissionDenied(error)) throw error;
+      // En afvist baggrundshydrering må ikke blokere en konkret brugerudløst
+      // gemning. Bekræft den rigtige Firebase SDK-bruger og lad mål-write
+      // afgøre, om det pågældende path er tilladt.
+      await refreshFirestoreAuth(operation, uid);
+    }
+  }
   if (activeUid !== uid || !cloudEnabled) {
-    await initializeUser(user);
+    try {
+      await initializeUser(user);
+    } catch (error) {
+      if (!isPermissionDenied(error)) throw error;
+      await refreshFirestoreAuth(operation, uid);
+    }
   }
   const resumedInitialization = initializationByUid.get(uid);
-  if (resumedInitialization) await resumedInitialization;
+  if (resumedInitialization) {
+    try {
+      await resumedInitialization;
+    } catch (error) {
+      if (!isPermissionDenied(error)) throw error;
+      await refreshFirestoreAuth(operation, uid);
+    }
+  }
   return assertCloudUser(operation);
 }
 
@@ -476,11 +539,12 @@ function normalizeProgramForCloud(program, index = 0) {
 
 async function writeProgramToCollection(uid, program, index = 0, collectionName = COLLECTIONS.workouts) {
   const normalized = normalizeProgramForCloud(program, index);
-  const reference = doc(db, "users", uid, collectionName, normalized.id);
-  await setDoc(reference, {
-    ...normalized,
-    firestoreUpdatedAt: serverTimestamp()
-  }, { merge: true });
+  const path = ["users", uid, collectionName, normalized.id];
+  const reference = doc(db, ...path);
+  await withPermissionRetry("writeProgramToCollection", path, () => setDoc(reference, {
+      ...normalized,
+      firestoreUpdatedAt: serverTimestamp()
+    }, { merge: true }), uid);
   return normalized;
 }
 
@@ -1242,6 +1306,7 @@ window.FirestoreDataService = {
   isCloudPrimary: () => cloudEnabled,
   isCloudReady: () => cloudEnabled && cloudState === "ready" && Boolean(activeUid),
   isConnectivityError,
+  isPermissionDenied,
   getCloudStatus: () => ({
     state: cloudState,
     uid: activeUid,

@@ -49,7 +49,7 @@ function createStore({ user = { uid: "uid-1" }, cloudSave = async () => true } =
   await assert.rejects(() => signedOut.store.saveProfileAndSync({ name: "Local", goal: "strength", trainingGoals: { primary: "strength" } }), /gyldigt login/);
   assert.equal(JSON.parse(signedOut.values.get("training_profile_v1")).name, "Local");
 
-  assert.match(cloudSource, /const pendingInitialization = initializationByUid\.get\(uid\);\s+if \(pendingInitialization\) await pendingInitialization;/);
+  assert.match(cloudSource, /const pendingInitialization = initializationByUid\.get\(uid\);[\s\S]*?if \(!isPermissionDenied\(error\)\) throw error;[\s\S]*?await refreshFirestoreAuth\(operation, uid\)/);
   assert.match(cloudSource, /async function saveProfileToCloud\(profile\) \{\s+const uid = await requireCloudUser\("Profilgemning"\)/);
   assert.match(cloudSource, /PATHS\.profile\(uid\)/);
   assert.match(cloudSource, /reportFirestoreError\("saveProfileToCloud", path, error, uid\)/);
@@ -64,9 +64,9 @@ function createStore({ user = { uid: "uid-1" }, cloudSave = async () => true } =
   assert.match(profileSource, /users\/\$\{window\.FirebaseAuthService/);
   assert.match(html, /wizard-store\.js\?v=20260718-profile-cloud1/);
   assert.match(html, /profile-account\.js\?v=20260721-modern-permanent1/);
-  assert.match(html, /firestore-cloud-service\.js\?v=20260722-sync-notice1/);
-  assert.match(html, /service-worker\.js\?v=20260723-sync-notice1/);
-  assert.match(serviceWorker, /work4it-shell-v130-sync-notice1/);
+  assert.match(html, /firestore-cloud-service\.js\?v=20260726-permission-retry1/);
+  assert.match(html, /service-worker\.js\?v=20260726-create-program-view1/);
+  assert.match(serviceWorker, /work4it-shell-v134-create-program-view1/);
 
   console.log("Profile local-first and confirmed Cloud-save scenarios passed");
 })().catch(error => {

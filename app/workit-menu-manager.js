@@ -143,12 +143,10 @@
         const element = document.getElementById(id);
         if (element) element.style.display = "none";
       });
-      const generator = document.getElementById("programGeneratorAccess");
-      if (generator) generator.hidden = true;
       document.getElementById("membershipPopup")?.classList.remove("open");
       document.getElementById("aiCoachPanel")?.classList.remove("open");
       document.body.classList.remove("ai-coach-open");
-      document.querySelectorAll(".progress-view.open, .calorie-view.open, .profile-account-view.open, .membership-view.open, .wizard-shell.open").forEach(view => {
+      document.querySelectorAll(".progress-view.open, .calorie-view.open, .profile-account-view.open, .membership-view.open, .saved-programs-view.open, .program-creation-view.open, .wizard-shell.open").forEach(view => {
         view.classList.remove("open");
         view.setAttribute("aria-hidden", "true");
       });

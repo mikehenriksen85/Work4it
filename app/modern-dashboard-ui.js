@@ -16,11 +16,11 @@
       label: "Træning",
       actions: [
         { id: "today", icon: "play", tone: "green", label: "Dagens træning", description: "Dit vigtigste næste skridt.", contextual: true, cta: "Åbn" },
-        { id: "generator", icon: "aiPlan", tone: "violet", label: "AI-træningsplan", description: "Opret en måltilpasset træningsplan.", handler: "openModernProgramGenerator", cta: "Opret med AI" },
-        { id: "blank", icon: "blank", tone: "cyan", label: "Tomt træningspas", description: "Byg selv et styrke-, cardio- eller calisthenics-pas.", handler: "openBlankWorkoutDialog", cta: "Opret træningspas" },
         { id: "saved", icon: "programs", tone: "blue", label: "Mine programmer", description: "Find og redigér gemte træningspas.", handler: "openModernSavedPrograms", cta: "Se programmer" },
+        { id: "generator", icon: "aiPlan", tone: "violet", label: "AI-træningsplan", description: "Opret en måltilpasset træningsplan.", handler: "openModernProgramGenerator", cta: "Opret med AI" },
         { id: "active", icon: "active", tone: "green", label: "Aktiv træning", description: "Fortsæt en igangværende eller pauset træning.", handler: "continueDashboardWorkout", cta: "Fortsæt træning", activeOnly: true },
         { id: "import", icon: "import", tone: "orange", label: "Importér screenshot", description: "Opret et program ud fra et billede.", handler: "openScreenshotImportInfo", cta: "Importér" },
+        { id: "blank", icon: "blank", tone: "cyan", label: "Tomt træningspas", description: "Byg selv et styrke-, cardio- eller calisthenics-pas.", handler: "openBlankWorkoutDialog", cta: "Opret træningspas" },
         { id: "history", icon: "history", tone: "cyan", label: "Historik og dashboard", description: "Se afsluttede træninger, statistik og heatmap.", handler: "openDashboard", cta: "Se historik" },
         { id: "progress", icon: "progress", tone: "green", label: "Min udvikling", description: "Følg rekorder, styrke, kropsmål og progression.", handler: "openModernProgress", cta: "Se udvikling" },
         { id: "calories", icon: "calories", tone: "orange", label: "Kalorie-estimat", description: "Se beregning og træningsintensitet.", handler: "openCalorieView", cta: "Se estimat" }
@@ -41,6 +41,7 @@
 
   let activeCategory = "training";
   let activeAction = "today";
+  let trainingDashboardScrollPosition = 0;
 
   const byId = id => document.getElementById(id);
   const escapeHtml = value => String(value ?? "")
@@ -56,8 +57,19 @@
     return CATEGORIES[activeCategory]?.actions || CATEGORIES.training.actions;
   }
 
+  function visibleActions() {
+    const actions = currentActions();
+    if (activeCategory !== "training") return actions;
+    const hasActiveWorkout = Boolean(snapshot().view?.activeWorkout);
+    const visible = actions.filter(action => !action.activeOnly || hasActiveWorkout);
+    if (!hasActiveWorkout) return visible;
+    const active = visible.find(action => action.id === "active");
+    return active ? [active, ...visible.filter(action => action.id !== "active")] : visible;
+  }
+
   function selectedAction() {
-    return currentActions().find(action => action.id === activeAction) || currentActions()[0];
+    const actions = visibleActions();
+    return actions.find(action => action.id === activeAction) || actions[0];
   }
 
   function workoutMeta(workout) {
@@ -118,8 +130,10 @@
   function renderRail() {
     const rail = byId("modernIconRail");
     if (!rail) return;
+    rail.hidden = activeCategory === "training";
+    if (rail.hidden) return;
     rail.setAttribute("aria-label", `${CATEGORIES[activeCategory].label}: funktioner`);
-    rail.innerHTML = currentActions().map(action => `
+    rail.innerHTML = visibleActions().map(action => `
       <button class="modern-icon-tab modern-tone-${escapeHtml(action.tone || "blue")}" id="modern-tab-${escapeHtml(action.id)}" type="button" role="tab"
         data-modern-action="${escapeHtml(action.id)}" tabindex="${action.id === activeAction ? "0" : "-1"}"
         aria-selected="${String(action.id === activeAction)}" aria-controls="modernFeaturePanel">
@@ -130,6 +144,8 @@
   function renderFeature() {
     const panel = byId("modernFeaturePanel");
     if (!panel) return;
+    panel.hidden = activeCategory === "training";
+    if (panel.hidden) return;
     const action = actionState(selectedAction());
     panel.dataset.tone = action.tone || "blue";
     panel.setAttribute("aria-labelledby", `modern-tab-${action.id}`);
@@ -148,9 +164,10 @@
   function renderCards() {
     const grid = byId("modernCardGrid");
     if (!grid) return;
-    grid.innerHTML = currentActions().map(action => {
+    grid.setAttribute("aria-label", `${CATEGORIES[activeCategory].label}: funktioner`);
+    grid.innerHTML = visibleActions().map(action => {
       const state = actionState(action);
-      return `<button class="modern-mini-card modern-tone-${escapeHtml(action.tone || "blue")}${action.destructive ? " destructive" : ""}" type="button"
+      return `<button class="modern-mini-card modern-tone-${escapeHtml(action.tone || "blue")}${action.id === "active" ? " is-active-workout" : ""}${action.destructive ? " destructive" : ""}" type="button"
         data-modern-open="${escapeHtml(action.id)}" ${state.disabled ? 'disabled aria-disabled="true"' : 'aria-disabled="false"'}>
         <span class="modern-icon" aria-hidden="true">${iconMarkup(action.icon)}</span>
         <span class="modern-mini-card-label"><strong>${escapeHtml(action.label)}</strong></span>
@@ -177,12 +194,13 @@
     renderFeature();
     renderCards();
     renderBottomNavigation();
+    if (byId("savedProgramsView")?.classList.contains("open")) renderSavedProgramsView();
   }
 
   function closeToolPanel() {
     const panel = byId("modernToolPanel");
     if (panel) panel.hidden = true;
-    ["programGeneratorAccess", "savedDropdown", "trashDropdown"].forEach(id => {
+    ["savedDropdown", "trashDropdown"].forEach(id => {
       const item = byId(id);
       if (item) item.hidden = true;
     });
@@ -204,24 +222,119 @@
   }
 
   function openModernProgramGenerator() {
-    if (!openToolPanel("programGeneratorAccess", "AI-genereret træningsplan")) return false;
+    const view = byId("programCreationView");
     const access = byId("programGeneratorAccess");
-    if (access) access.hidden = false;
+    if (!view || !access) return false;
+    if (!view.classList.contains("open")) trainingDashboardScrollPosition = window.scrollY || 0;
+    closeToolPanel();
+    window.WorkitMenuManager?.openSurface?.("program-creation-view", {
+      roots: () => [view],
+      close: () => closeProgramCreationView({ fromManager: true })
+    });
+    view.classList.add("open");
+    view.setAttribute("aria-hidden", "false");
+    view.scrollTop = 0;
+    access.hidden = false;
     const count = byId("countPicker");
     if (count) count.style.display = "none";
+    window.saveLastActiveView?.("create-program");
+    window.Work4itIcons?.hydrate?.(view);
+    window.requestAnimationFrame(() => byId("programCreationViewTitle")?.focus?.({ preventScroll: true }));
+    return true;
+  }
+
+  function closeProgramCreationView(options = {}) {
+    const view = byId("programCreationView");
+    if (!view?.classList.contains("open")) return false;
+    view.classList.remove("open");
+    view.setAttribute("aria-hidden", "true");
+    window.WorkitMenuManager?.closePanel?.("count-picker", "program-creation-close");
+    if (!options.fromManager) window.WorkitMenuManager?.notifySurfaceClosed?.("program-creation-view");
+    if (options.persist !== false) window.saveLastActiveView?.("program");
+    if (options.restoreScroll !== false) {
+      window.requestAnimationFrame(() => window.scrollTo({ top: trainingDashboardScrollPosition, behavior: "auto" }));
+    }
     return true;
   }
 
   function openModernSavedPrograms() {
-    window.renderSaved?.();
-    return openToolPanel("savedDropdown", "Mine programmer");
+    const view = byId("savedProgramsView");
+    if (!view) return false;
+    if (!view.classList.contains("open")) trainingDashboardScrollPosition = window.scrollY || 0;
+    closeToolPanel();
+    renderSavedProgramsView();
+    window.WorkitMenuManager?.openSurface?.("saved-programs-view", {
+      roots: () => [view],
+      close: () => closeSavedProgramsView({ fromManager: true })
+    });
+    view.classList.add("open");
+    view.setAttribute("aria-hidden", "false");
+    view.scrollTop = 0;
+    window.saveLastActiveView?.("saved-programs");
+    window.Work4itIcons?.hydrate?.(view);
+    window.requestAnimationFrame(() => byId("savedProgramsViewTitle")?.focus?.({ preventScroll: true }));
+    return true;
+  }
+
+  function renderSavedProgramsView() {
+    const list = [...(snapshot().programs || [])]
+      .filter(program => program && program.id)
+      .sort((a, b) => new Date(b.savedAt || 0) - new Date(a.savedAt || 0));
+    const select = byId("savedProgramsViewSelect");
+    const container = byId("savedProgramsViewList");
+    const empty = byId("savedProgramsViewEmpty");
+    const count = byId("savedProgramsViewCount");
+    if (select) {
+      select.innerHTML = list.length
+        ? `<option value="">Vælg træningspas…</option>${list.map(program => `<option value="${escapeHtml(program.id)}">${escapeHtml(program.title || "Træningspas")}</option>`).join("")}`
+        : `<option value="">Ingen gemte programmer</option>`;
+      select.disabled = !list.length;
+    }
+    if (count) count.textContent = `${list.length} ${list.length === 1 ? "program" : "programmer"}`;
+    if (empty) empty.hidden = Boolean(list.length);
+    if (!container) return;
+    container.hidden = !list.length;
+    container.innerHTML = list.map(program => {
+      const title = program.title || "Træningspas";
+      const meta = workoutMeta({
+        exerciseCount: (program.days || []).reduce((total, day) => total + (day?.exercises?.length || 0), 0),
+        dayCount: program.days?.length || 1
+      });
+      const savedAt = new Date(program.savedAt || 0);
+      const date = Number.isFinite(savedAt.getTime())
+        ? savedAt.toLocaleDateString("da-DK", { day: "numeric", month: "short", year: "numeric" })
+        : "";
+      return `<article class="saved-program-card">
+        <span class="saved-program-card-icon modern-icon modern-tone-blue" aria-hidden="true">${iconMarkup("programs")}</span>
+        <div class="saved-program-card-copy">
+          <h3>${escapeHtml(title)}</h3>
+          <p>${escapeHtml([meta, date ? `Gemt ${date}` : ""].filter(Boolean).join(" · "))}</p>
+        </div>
+        <button class="saved-program-open" type="button" data-saved-program-id="${escapeHtml(program.id)}" aria-label="Åbn og redigér ${escapeHtml(title)}">Åbn og redigér</button>
+      </article>`;
+    }).join("");
+  }
+
+  function closeSavedProgramsView(options = {}) {
+    const view = byId("savedProgramsView");
+    if (!view?.classList.contains("open")) return false;
+    view.classList.remove("open");
+    view.setAttribute("aria-hidden", "true");
+    if (!options.fromManager) window.WorkitMenuManager?.notifySurfaceClosed?.("saved-programs-view");
+    if (options.persist !== false) window.saveLastActiveView?.("program");
+    if (options.restoreScroll !== false) {
+      window.requestAnimationFrame(() => window.scrollTo({ top: trainingDashboardScrollPosition, behavior: "auto" }));
+    }
+    return true;
   }
 
   function openModernSavedProgram(id) {
     if (!id) return false;
     window.loadSavedProgram?.(id);
+    closeSavedProgramsView({ restoreScroll: false, persist: false });
     closeToolPanel();
     window.openWorkoutEditor?.();
+    window.saveLastActiveView?.("program");
     render();
     return true;
   }
@@ -257,7 +370,7 @@
   }
 
   function invokeAction(actionId) {
-    const action = currentActions().find(item => item.id === actionId);
+    const action = visibleActions().find(item => item.id === actionId);
     if (!action) return false;
     const state = actionState(action);
     if (state.disabled) return false;
@@ -269,7 +382,7 @@
   }
 
   function selectAction(actionId) {
-    if (!currentActions().some(action => action.id === actionId)) return false;
+    if (!visibleActions().some(action => action.id === actionId)) return false;
     activeAction = actionId;
     render();
     window.requestAnimationFrame(() => byId(`modern-tab-${actionId}`)?.scrollIntoView?.({ behavior: "smooth", block: "nearest", inline: "center" }));
@@ -311,6 +424,10 @@
       const category = event.target.closest?.("[data-modern-category]");
       if (category) setCategory(category.dataset.modernCategory);
     });
+    byId("savedProgramsView")?.addEventListener("click", event => {
+      const open = event.target.closest?.("[data-saved-program-id]");
+      if (open) openModernSavedProgram(open.dataset.savedProgramId);
+    });
   }
 
   function initialize() {
@@ -320,12 +437,24 @@
 
   window.closeModernToolPanel = closeToolPanel;
   window.openModernProgramGenerator = openModernProgramGenerator;
+  window.closeProgramCreationView = closeProgramCreationView;
   window.openModernSavedPrograms = openModernSavedPrograms;
   window.openModernSavedProgram = openModernSavedProgram;
+  window.closeSavedProgramsView = closeSavedProgramsView;
   window.openModernTrash = openModernTrash;
   window.openModernSettings = openModernSettings;
   window.openModernProgress = openModernProgress;
-  window.Work4itModernDashboard = Object.freeze({ CATEGORIES, setCategory, selectAction, invokeAction, closeToolPanel, render });
+  window.Work4itModernDashboard = Object.freeze({
+    CATEGORIES,
+    setCategory,
+    selectAction,
+    invokeAction,
+    closeToolPanel,
+    closeProgramCreationView,
+    closeSavedProgramsView,
+    render,
+    getVisibleActionIds: () => visibleActions().map(action => action.id)
+  });
 
   ["work4it:dashboard-updated", "firestore:data-hydrated", "firestore:sync-completed", "training-profile:updated", "firebase-auth:changed", "workout-history:changed"]
     .forEach(eventName => window.addEventListener(eventName, render));

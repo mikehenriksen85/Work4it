@@ -16,7 +16,9 @@
     "membership",
     "progress",
     "calorie",
-    "dashboard"
+    "dashboard",
+    "saved-programs",
+    "create-program"
   ]);
   let appReady = false;
   let cloudReady = false;
@@ -41,7 +43,7 @@
     document.getElementById("membershipPopup")?.classList.remove("open");
     const modal = byId("modal");
     if (modal) modal.style.display = "none";
-    ["progressView", "profileAccountView", "membershipView", "calorieView"].forEach(id => {
+    ["progressView", "profileAccountView", "membershipView", "calorieView", "savedProgramsView", "programCreationView"].forEach(id => {
       byId(id)?.classList.remove("open");
     });
     const exerciseMenu = byId("muscleMenu");
@@ -58,7 +60,9 @@
       ["profile-view", byId("profileAccountView")],
       ["membership-view", byId("membershipView")],
       ["progress-view", byId("progressView")],
-      ["calorie-view", byId("calorieView")]
+      ["calorie-view", byId("calorieView")],
+      ["saved-programs-view", byId("savedProgramsView")],
+      ["program-creation-view", byId("programCreationView")]
     ];
     return candidates.find(([name, element]) => name !== except && isVisible(element))?.[0] || "";
   }

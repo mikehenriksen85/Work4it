@@ -109,6 +109,8 @@ body {
 }
 
 .modern-icon-rail::-webkit-scrollbar { display: none; }
+.modern-icon-rail[hidden],
+.modern-feature-card[hidden] { display: none !important; }
 
 .work4it-icon-svg {
   width: 1em;
@@ -262,17 +264,15 @@ body {
 
 .modern-feature-open.destructive { background: var(--red); color: #fff; }
 
-.modern-shortcuts { display: grid; gap: var(--modern-space-2); }
-.modern-shortcuts h2 { margin: 0 2px; color: var(--text-primary); font-size: var(--font-size-h3); }
 .modern-card-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--modern-space-2); }
 
 .modern-mini-card {
-  min-height: 76px;
+  min-height: 64px;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
   gap: 11px;
-  padding: 15px;
+  padding: 11px 13px;
   border: 1px solid var(--border);
   border-radius: var(--modern-radius-md);
   background: color-mix(in srgb, var(--card), transparent 3%);
@@ -285,6 +285,13 @@ body {
 .modern-mini-card:hover { border-color: color-mix(in srgb, var(--blue), transparent 40%); }
 .modern-mini-card:disabled { opacity: .52; cursor: not-allowed; }
 .modern-mini-card.destructive { border-color: color-mix(in srgb, var(--red), transparent 55%); }
+.modern-mini-card.is-active-workout {
+  grid-column: 1 / -1;
+  min-height: 72px;
+  border-color: color-mix(in srgb, var(--green), transparent 28%);
+  background: color-mix(in srgb, var(--green), var(--card) 88%);
+  box-shadow: 0 12px 28px color-mix(in srgb, var(--green), transparent 84%);
+}
 .modern-mini-card .modern-icon {
   display: grid;
   width: 38px;
@@ -375,6 +382,248 @@ body {
 }
 
 .modern-tool-content .trash-list { display: grid; gap: 10px; }
+
+.program-creation-view {
+  position: fixed;
+  inset: calc(60px + env(safe-area-inset-top, 0px)) 0 0;
+  z-index: 1400;
+  display: none;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: clamp(14px, 3vw, 28px);
+  padding-bottom: calc(32px + env(safe-area-inset-bottom, 0px));
+  background: var(--bg);
+  -webkit-overflow-scrolling: touch;
+}
+
+.program-creation-view.open { display: block; }
+
+.program-creation-view-shell {
+  width: min(760px, 100%);
+  min-height: 100%;
+  display: grid;
+  align-content: start;
+  gap: var(--modern-space-3);
+  margin: 0 auto;
+}
+
+.program-creation-view-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--modern-space-3);
+  padding-bottom: var(--modern-space-2);
+  border-bottom: 1px solid var(--border);
+}
+
+.program-creation-view-head h1,
+.program-creation-card h2,
+.program-creation-card p { margin: 0; }
+
+.program-creation-view-head h1 {
+  color: var(--text-primary);
+  font-size: clamp(1.5rem, 5vw, 2rem);
+  line-height: 1.15;
+}
+
+.program-creation-eyebrow {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--text-secondary);
+  font-size: var(--font-size-small);
+}
+
+.program-creation-back {
+  min-height: var(--modern-touch);
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--modern-radius-sm);
+  background: var(--input);
+  color: var(--text-primary);
+  cursor: pointer;
+  font: inherit;
+  font-weight: var(--font-weight-semibold);
+}
+
+.program-creation-card {
+  display: grid;
+  gap: var(--modern-space-3);
+  padding: clamp(16px, 4vw, 24px);
+  border: 1px solid var(--border);
+  border-radius: var(--modern-radius-lg);
+  background: var(--card);
+  box-shadow: var(--shadow-soft);
+}
+
+.program-creation-card .modern-tool-content { gap: var(--modern-space-3); }
+.program-creation-card h2 { color: var(--text-primary); font-size: var(--font-size-h2); }
+.program-creation-card p { color: var(--text-secondary); line-height: 1.5; }
+.program-creation-card .count-picker { display: grid; }
+.program-creation-card .modern-primary-button { width: 100%; }
+
+.saved-programs-view {
+  position: fixed;
+  inset: calc(60px + env(safe-area-inset-top, 0px)) 0 0;
+  z-index: 1400;
+  display: none;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: clamp(14px, 3vw, 28px);
+  padding-bottom: calc(32px + env(safe-area-inset-bottom, 0px));
+  background: var(--bg);
+  -webkit-overflow-scrolling: touch;
+}
+
+.saved-programs-view.open { display: block; }
+
+.saved-programs-view-shell {
+  width: min(980px, 100%);
+  min-height: 100%;
+  display: grid;
+  align-content: start;
+  gap: var(--modern-space-3);
+  margin: 0 auto;
+}
+
+.saved-programs-view-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--modern-space-3);
+  padding-bottom: var(--modern-space-2);
+  border-bottom: 1px solid var(--border);
+}
+
+.saved-programs-view-head h1,
+.saved-programs-list-head h2,
+.saved-program-card h3,
+.saved-programs-empty h2,
+.saved-programs-empty p { margin: 0; }
+
+.saved-programs-view-head h1 {
+  color: var(--text-primary);
+  font-size: clamp(1.5rem, 5vw, 2rem);
+  line-height: 1.15;
+}
+
+.saved-programs-eyebrow {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--text-secondary);
+  font-size: var(--font-size-small);
+}
+
+.saved-programs-back,
+.saved-programs-secondary-button,
+.saved-program-open {
+  min-height: var(--modern-touch);
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--modern-radius-sm);
+  background: var(--input);
+  color: var(--text-primary);
+  cursor: pointer;
+  font: inherit;
+  font-weight: var(--font-weight-semibold);
+}
+
+.saved-programs-picker {
+  display: grid;
+  gap: 8px;
+  padding: var(--modern-space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--modern-radius-md);
+  background: var(--card);
+  box-shadow: var(--shadow-soft);
+}
+
+.saved-programs-picker label {
+  color: var(--text-primary);
+  font-weight: var(--font-weight-semibold);
+}
+
+.saved-programs-list-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--modern-space-2);
+}
+
+.saved-programs-list-head h2 { font-size: var(--font-size-h2); }
+.saved-programs-list-head span { color: var(--text-secondary); font-size: var(--font-size-small); }
+.saved-programs-list { display: grid; gap: var(--modern-space-2); }
+
+.saved-program-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--modern-space-3);
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--modern-radius-md);
+  background: var(--card);
+  box-shadow: var(--shadow-soft);
+}
+
+.saved-program-card-icon {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--modern-icon-color, var(--blue)), transparent 84%);
+  color: var(--modern-icon-color, var(--text-accent));
+  font-size: 1.45rem;
+}
+
+.saved-program-card-copy { min-width: 0; }
+.saved-program-card h3 {
+  overflow: hidden;
+  color: var(--text-primary);
+  font-size: 1rem;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.saved-program-card p {
+  margin: 4px 0 0;
+  color: var(--text-secondary);
+  font-size: var(--font-size-small);
+  line-height: 1.35;
+}
+
+.saved-program-open {
+  border-color: color-mix(in srgb, var(--blue), transparent 45%);
+  color: var(--text-accent);
+}
+
+.saved-programs-empty {
+  justify-items: center;
+  gap: var(--modern-space-2);
+  padding: clamp(28px, 8vw, 52px) var(--modern-space-3);
+  border: 1px dashed var(--border);
+  border-radius: var(--modern-radius-lg);
+  background: var(--card);
+  text-align: center;
+}
+.saved-programs-empty:not([hidden]) { display: grid; }
+.saved-programs-empty .modern-icon { font-size: 2rem; }
+.saved-programs-empty p { max-width: 520px; color: var(--text-secondary); line-height: 1.5; }
+.saved-programs-empty-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--modern-space-2); }
+
+@media (max-width: 560px) {
+  .program-creation-view { padding: 12px; padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }
+  .program-creation-view-head { gap: 10px; }
+  .program-creation-back { padding-inline: 12px; }
+  .program-creation-card { padding: 14px; }
+  .saved-programs-view { padding: 12px; padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }
+  .saved-programs-view-head { gap: 10px; }
+  .saved-programs-back { padding-inline: 12px; }
+  .saved-program-card { grid-template-columns: auto minmax(0, 1fr); gap: 11px; padding: 12px; }
+  .saved-program-open { grid-column: 1 / -1; width: 100%; }
+  .saved-programs-empty-actions,
+  .saved-programs-empty-actions > * { width: 100%; }
+}
 
 .workout-editor-details {
   margin-top: 12px;
@@ -477,7 +726,7 @@ textarea,
 button { font-family: var(--font-primary); }
 
 @media (min-width: 760px) {
-  .modern-card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .modern-card-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .modern-feature-card { min-height: 250px; }
 }
 
@@ -490,7 +739,7 @@ button { font-family: var(--font-primary); }
   .modern-feature-open,
   .modern-primary-button { width: 100%; }
   .modern-card-grid { grid-template-columns: 1fr; }
-  .modern-mini-card { min-height: 72px; padding: 13px 15px; }
+  .modern-mini-card { min-height: 64px; padding: 11px 13px; }
   .modern-icon-rail { gap: 6px; padding: 6px; }
   .modern-icon-tab { min-width: 108px; font-size: 10.5px; }
 }

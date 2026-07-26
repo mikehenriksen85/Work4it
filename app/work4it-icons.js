@@ -28,6 +28,7 @@
     save: '<path d="M5 3h12l3 3v15H4V4a1 1 0 0 1 1-1Z"/><path d="M8 3v6h8V3M8 21v-7h8v7"/>',
     finish: '<path d="M5 21V4M6 5h11l-2 3 2 3H6"/><path d="m9 16 2 2 4-4"/>',
     pause: '<circle cx="12" cy="12" r="9"/><path d="M10 8v8M14 8v8"/>',
+    back: '<path d="m15 5-7 7 7 7"/><path d="M8 12h12"/>',
     close: '<circle cx="12" cy="12" r="9"/><path d="m9 9 6 6M15 9l-6 6"/>',
     share: '<circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="m8.3 10.9 7.4-4.7M8.3 13.1l7.4 4.7"/>',
     add: '<circle cx="12" cy="12" r="9"/><path d="M12 7v10M7 12h10"/>',

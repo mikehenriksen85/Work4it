@@ -55,7 +55,7 @@
   <link rel="apple-touch-icon" href="Pictures/App%20Ikon%20V1.png">
   <link rel="stylesheet" href="exercise-animation/mannequin.css?v=20260716-mannequin-prototype1">
   <link rel="stylesheet" href="progression.css?v=20260718-progression1">
-  <link rel="stylesheet" href="modern-dashboard-ui.css?v=20260722-card-labels1">
+  <link rel="stylesheet" href="modern-dashboard-ui.css?v=20260726-create-program-view1">
   <title>Work4it</title>
   <style>
     :root {
@@ -796,6 +796,25 @@
     .replacement-confirm-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
     .row { display: flex; gap: 8px; margin-bottom: 8px; }
     .row > * { flex: 1; }
+    .blank-workout-options {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .blank-workout-option {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-width: 0;
+      min-height: 52px;
+      padding-inline: 10px;
+      white-space: nowrap;
+      overflow-wrap: normal;
+      word-break: keep-all;
+      hyphens: none;
+    }
     .custom-box { border-top: 1px dashed var(--border); border-bottom: 1px dashed var(--border); margin: 10px 0; padding: 10px 0; }
     .custom-title { color: var(--text-success); font-size: var(--font-size-body); font-weight: var(--font-weight-semibold); margin-bottom: 8px; }
     .list { max-height: 420px; overflow-y: auto; }
@@ -2140,6 +2159,12 @@
       }
       .workout-empty-actions { grid-template-columns: 1fr; }
       .workout-empty-actions .small-btn { width: 100%; }
+      .blank-workout-options { grid-template-columns: 1fr; }
+      .blank-workout-option {
+        justify-content: flex-start;
+        min-height: 54px;
+        padding-inline: 16px;
+      }
       .workout-sticky-top .calorie-value {
         font-size: var(--font-size-compact);
       }
@@ -2711,7 +2736,7 @@
     <button class="nav-btn" onclick="goHome()">Hovedmenu</button>
     <div class="app-title" aria-label="Work4it"><img class="brand-header-logo" src="Pictures/App%20Logo%20v1.png" alt="Work4it" width="1536" height="1024"><span class="brand-header-mobile"><img class="brand-header-icon" src="Pictures/App%20Ikon%20V1.png" alt="" width="1254" height="1254"><span class="brand-header-text" id="appTitleText">Work4it</span></span></div>
   </header>
-  <script src="workit-menu-manager.js?v=20260721-modern-permanent1"></script>
+  <script src="workit-menu-manager.js?v=20260726-create-program-view1"></script>
 
   <main class="canvas" id="programCanvas">
     <section class="card">
@@ -2726,43 +2751,9 @@
         </div>
         <nav class="modern-icon-rail" id="modernIconRail" role="tablist" aria-label="Funktioner"></nav>
         <section class="modern-feature-card" id="modernFeaturePanel" role="tabpanel" aria-live="polite"></section>
-        <section class="modern-shortcuts" aria-labelledby="modernShortcutsTitle">
-          <h2 id="modernShortcutsTitle">Hurtig adgang</h2>
-          <div class="modern-card-grid" id="modernCardGrid"></div>
-        </section>
+        <div class="modern-card-grid" id="modernCardGrid" aria-label="Træning: funktioner"></div>
         <section class="modern-tool-panel" id="modernToolPanel" aria-labelledby="modernToolTitle" hidden>
           <header><h2 id="modernToolTitle">Værktøj</h2><button type="button" onclick="closeModernToolPanel()" aria-label="Luk">×</button></header>
-          <div class="modern-tool-content" id="programGeneratorAccess" hidden>
-            <h3 id="generatorSectionTitle">AI-genereret træningsplan</h3>
-            <label for="programType">Træningstype</label>
-            <select class="modern-select" id="programType" onchange="chooseProgramType(this.value)">
-              <option value="" selected disabled>Vælg træningstype...</option>
-              <option value="fullbody">Fullbody Pas</option><option value="push">Push Pas</option><option value="pull">Pull Pas</option>
-              <option value="legs">Legs Pas</option><option value="cardio">Cardio</option><option value="calisthenics">Calisthenics</option>
-            </select>
-            <div class="count-picker" id="countPicker">
-              <label id="countTitle" for="automaticExerciseCount">Antal øvelser</label>
-              <select class="modern-select" id="automaticExerciseCount" onchange="setAutomaticExerciseCount(this.value)">
-                <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
-                <option value="5" selected>5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option>
-              </select>
-              <div id="cardioGoalPicker" style="display:none;">
-                <label for="cardioGoalMode">Cardio-mål</label>
-                <select class="modern-select" id="cardioGoalMode"><option value="weight_loss">Vægttab</option><option value="conditioning">Kondition</option><option value="general_health">Generel sundhed</option><option value="recovery">Restitution</option></select>
-              </div>
-              <div id="calisthenicsTemplatePicker" style="display:none;">
-                <label for="calisthenicsTemplateMode">Programskabelon</label>
-                <select class="modern-select" id="calisthenicsTemplateMode">
-                  <option value="beginner">Begynder Calisthenics</option><option value="muscle_gain">Calisthenics Muskelopbygning</option>
-                  <option value="strength">Calisthenics Styrke</option><option value="no_equipment">Hjemmetræning uden udstyr</option>
-                  <option value="pullup_mastery">Pull-up Mastery</option><option value="dip_mastery">Dip Mastery</option>
-                  <option value="muscleup_progression">Muscle-up Progression</option><option value="street_workout">Avanceret Street Workout</option>
-                </select>
-              </div>
-              <p>Vælg programtype og antal øvelser. Programmet åbnes automatisk efter oprettelse.</p>
-              <button class="modern-primary-button" type="button" onclick="generateSelectedAutomaticProgram()">Opret træningspas</button>
-            </div>
-          </div>
           <div class="modern-tool-content" id="savedDropdown" hidden>
             <h3>Vælg et gemt træningspas</h3>
             <select class="modern-select" id="savedSelect" onchange="openModernSavedProgram(this.value)"></select>
@@ -2880,6 +2871,84 @@
         </div>
         <div id="copilotFeedback" role="status" aria-live="polite"></div>
       </div>
+    </div>
+  </section>
+
+  <section class="program-creation-view" id="programCreationView" aria-hidden="true" aria-labelledby="programCreationViewTitle">
+    <div class="program-creation-view-shell">
+      <header class="program-creation-view-head">
+        <button class="program-creation-back" type="button" data-work4it-leading-icon="back" onclick="closeProgramCreationView()" aria-label="Tilbage til Træning">Tilbage</button>
+        <div>
+          <span class="program-creation-eyebrow">Træning</span>
+          <h1 id="programCreationViewTitle" tabindex="-1">Opret nyt træningspas</h1>
+        </div>
+      </header>
+      <section class="program-creation-card" aria-labelledby="generatorSectionTitle">
+        <div class="modern-tool-content" id="programGeneratorAccess">
+          <h2 id="generatorSectionTitle">AI-genereret træningsplan</h2>
+          <p>Vælg den træningstype, der passer til dit mål.</p>
+          <label for="programType">Træningstype</label>
+          <select class="modern-select" id="programType" onchange="chooseProgramType(this.value)">
+            <option value="" selected disabled>Vælg træningstype...</option>
+            <option value="fullbody">Fullbody Pas</option><option value="push">Push Pas</option><option value="pull">Pull Pas</option>
+            <option value="legs">Legs Pas</option><option value="cardio">Cardio</option><option value="calisthenics">Calisthenics</option>
+          </select>
+          <div class="count-picker" id="countPicker">
+            <label id="countTitle" for="automaticExerciseCount">Antal øvelser</label>
+            <select class="modern-select" id="automaticExerciseCount" onchange="setAutomaticExerciseCount(this.value)">
+              <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
+              <option value="5" selected>5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option>
+            </select>
+            <div id="cardioGoalPicker" style="display:none;">
+              <label for="cardioGoalMode">Cardio-mål</label>
+              <select class="modern-select" id="cardioGoalMode"><option value="weight_loss">Vægttab</option><option value="conditioning">Kondition</option><option value="general_health">Generel sundhed</option><option value="recovery">Restitution</option></select>
+            </div>
+            <div id="calisthenicsTemplatePicker" style="display:none;">
+              <label for="calisthenicsTemplateMode">Programskabelon</label>
+              <select class="modern-select" id="calisthenicsTemplateMode">
+                <option value="beginner">Begynder Calisthenics</option><option value="muscle_gain">Calisthenics Muskelopbygning</option>
+                <option value="strength">Calisthenics Styrke</option><option value="no_equipment">Hjemmetræning uden udstyr</option>
+                <option value="pullup_mastery">Pull-up Mastery</option><option value="dip_mastery">Dip Mastery</option>
+                <option value="muscleup_progression">Muscle-up Progression</option><option value="street_workout">Avanceret Street Workout</option>
+              </select>
+            </div>
+            <p>Vælg programtype og antal øvelser. Programmet åbnes automatisk efter oprettelse.</p>
+            <button class="modern-primary-button" type="button" onclick="generateSelectedAutomaticProgram()">Opret træningspas</button>
+          </div>
+        </div>
+      </section>
+    </div>
+  </section>
+
+  <section class="saved-programs-view" id="savedProgramsView" aria-hidden="true" aria-labelledby="savedProgramsViewTitle">
+    <div class="saved-programs-view-shell">
+      <header class="saved-programs-view-head">
+        <button class="saved-programs-back" type="button" data-work4it-leading-icon="back" onclick="closeSavedProgramsView()" aria-label="Tilbage til Træning">Tilbage</button>
+        <div>
+          <span class="saved-programs-eyebrow">Træning</span>
+          <h1 id="savedProgramsViewTitle" tabindex="-1">Mine programmer</h1>
+        </div>
+      </header>
+      <section class="saved-programs-picker" aria-labelledby="savedProgramsPickerTitle">
+        <label id="savedProgramsPickerTitle" for="savedProgramsViewSelect">Vælg et gemt træningspas</label>
+        <select class="modern-select" id="savedProgramsViewSelect" onchange="openModernSavedProgram(this.value)">
+          <option value="">Vælg træningspas…</option>
+        </select>
+      </section>
+      <div class="saved-programs-list-head">
+        <h2>Gemte programmer</h2>
+        <span id="savedProgramsViewCount">0 programmer</span>
+      </div>
+      <div class="saved-programs-list" id="savedProgramsViewList"></div>
+      <section class="saved-programs-empty" id="savedProgramsViewEmpty" hidden>
+        <span class="modern-icon modern-tone-blue" data-work4it-icon="programs" aria-hidden="true"></span>
+        <h2>Ingen gemte programmer endnu</h2>
+        <p>Opret et træningspas med AI, byg et selv eller importér et screenshot.</p>
+        <div class="saved-programs-empty-actions">
+          <button class="modern-primary-button" type="button" onclick="closeSavedProgramsView({ restoreScroll: false });openModernProgramGenerator()">Opret med AI</button>
+          <button class="saved-programs-secondary-button" type="button" onclick="closeSavedProgramsView({ restoreScroll: false });openBlankWorkoutDialog()">Opret tomt træningspas</button>
+        </div>
+      </section>
     </div>
   </section>
 
@@ -3706,6 +3775,8 @@
 
     function currentAppView() {
       if (hasActiveWorkoutSession?.() && currentWorkoutView === "session") return "session";
+      if ($("programCreationView")?.classList.contains("open")) return "create-program";
+      if ($("savedProgramsView")?.classList.contains("open")) return "saved-programs";
       if ($("profileAccountView")?.classList.contains("open")) return "profile";
       if ($("membershipView")?.classList.contains("open")) return "membership";
       if ($("progressView")?.classList.contains("open")) return "progress";
@@ -3891,6 +3962,14 @@
       window.location.href = appUrl();
     }
     function goBackSafe() {
+      if ($("programCreationView")?.classList.contains("open")) {
+        closeProgramCreationView();
+        return;
+      }
+      if ($("savedProgramsView")?.classList.contains("open")) {
+        closeSavedProgramsView();
+        return;
+      }
       if ($("membershipView")?.classList.contains("open")) {
         closeMembershipView();
         return;
@@ -4496,6 +4575,7 @@
     }
 
     function presentGeneratedWorkout() {
+      window.closeProgramCreationView?.({ restoreScroll: false, persist: false });
       window.Work4itModernDashboard?.closeToolPanel?.();
       renderDashboard();
       openWorkoutEditor();
@@ -4709,10 +4789,10 @@
       $("modalTitle").textContent = "Opret tomt træningspas";
       $("modalContent").innerHTML = `
         <p class="helper-text">Vælg hvilken type træningspas du vil oprette.</p>
-        <div class="row">
-          <button class="small-btn modern-tone-blue" data-work4it-leading-icon="training" onclick="closeModal();newWorkout('strength')">Styrketræning</button>
-          <button class="small-btn modern-tone-violet" data-work4it-leading-icon="calisthenics" onclick="closeModal();newWorkout('calisthenics')">Calisthenics</button>
-          <button class="small-btn modern-tone-orange" data-work4it-leading-icon="calories" onclick="closeModal();newWorkout('cardio')">Cardio</button>
+        <div class="blank-workout-options">
+          <button class="small-btn blank-workout-option modern-tone-blue" data-work4it-leading-icon="training" onclick="closeModal();newWorkout('strength')">Styrketræning</button>
+          <button class="small-btn blank-workout-option modern-tone-violet" data-work4it-leading-icon="calisthenics" onclick="closeModal();newWorkout('calisthenics')">Calisthenics</button>
+          <button class="small-btn blank-workout-option modern-tone-orange" data-work4it-leading-icon="calories" onclick="closeModal();newWorkout('cardio')">Cardio</button>
         </div>`;
       window.Work4itIcons?.hydrate?.($("modalContent"));
       openModal();
@@ -7447,6 +7527,10 @@
     }
     function closeViewsForLoginRouting() {
       window.WorkitWindowManager?.closeNonAuthWindows?.();
+      $("programCreationView")?.classList.remove("open");
+      $("programCreationView")?.setAttribute("aria-hidden", "true");
+      $("savedProgramsView")?.classList.remove("open");
+      $("savedProgramsView")?.setAttribute("aria-hidden", "true");
       ["savedDropdown", "trashDropdown", "muscleMenu"].forEach(id => {
         const element = $(id);
         if (element) element.style.display = "none";
@@ -7462,10 +7546,18 @@
       const resume = readAppResumeState();
       const savedView = resume?.view || window.WorkitViewState?.get?.() || "program";
       const restoredAutosave = loadAutosave();
-      const view = ["profile", "membership", "progress", "calorie", "dashboard", "today", "program", "session"].includes(savedView)
+      const view = ["profile", "membership", "progress", "calorie", "dashboard", "today", "program", "session", "saved-programs", "create-program"].includes(savedView)
         ? savedView
         : "program";
 
+      if (view === "create-program" && typeof openModernProgramGenerator === "function") {
+        openModernProgramGenerator();
+        return "create-program";
+      }
+      if (view === "saved-programs" && typeof openModernSavedPrograms === "function") {
+        openModernSavedPrograms();
+        return "saved-programs";
+      }
       if (view === "profile" && typeof openProfileAccountView === "function") {
         openProfileAccountView();
         return "profile";
@@ -10712,10 +10804,10 @@
   <script src="ai-copilot-actions.js?v=20260713-ai-coach1"></script>
   <script src="help-content-config.js?v=20260628-help1"></script>
   <script src="password-visibility.js?v=20260621-password-toggle1"></script>
-  <script src="auth-gate.js?v=20260712-google-auth-domain1"></script>
+  <script src="auth-gate.js?v=20260726-create-program-view1"></script>
   <script src="theme-service.js?v=20260627-theme1"></script>
   <script src="work4it-icons.js?v=20260722-icon-system1"></script>
-  <script src="modern-dashboard-ui.js?v=20260722-card-labels1"></script>
+  <script src="modern-dashboard-ui.js?v=20260726-create-program-view1"></script>
   <script src="profile-account.js?v=20260721-modern-permanent1"></script>
   <script src="profile-wizard.js?v=20260716-cardio-empty-time1"></script>
   <script src="daily-start-wizard.js?v=20260615-window1"></script>
@@ -10726,12 +10818,12 @@
   <script type="module" src="exercise-animation-cloud-service.js?v=20260716-backend-admin-read1"></script>
   <script type="module" src="stripe-checkout.js?v=20260713-admin-subscription-test1"></script>
   <script type="module" src="auth-service.js?v=20260713-stripe-google-login1"></script>
-  <script type="module" src="firestore-cloud-service.js?v=20260722-sync-notice1"></script>
+  <script type="module" src="firestore-cloud-service.js?v=20260726-permission-retry1"></script>
   <script type="module" src="ai-request-counter.js?v=20260713-stripe-google-login1"></script>
   <script>
     if ("serviceWorker" in navigator && window.isSecureContext) {
       window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./service-worker.js?v=20260723-sync-notice1").catch(error => {
+        navigator.serviceWorker.register("./service-worker.js?v=20260726-create-program-view1").catch(error => {
           console.warn("Work4it kunne ikke aktivere offline app-shell.", error);
         });
       });
