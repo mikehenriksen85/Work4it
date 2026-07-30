@@ -63,13 +63,17 @@ assert.doesNotMatch(html, /Hurtig adgang|modernShortcutsTitle|modern-shortcuts/)
 assert.match(source, /\{ id: "today"[\s\S]*?\{ id: "saved"[\s\S]*?\{ id: "generator"/);
 assert.match(source, /function openModernSavedPrograms\(/);
 assert.match(source, /openSurface\?\.\("saved-programs-view"/);
-assert.match(source, /trainingDashboardScrollPosition = window\.scrollY/);
-assert.match(source, /window\.scrollTo\(\{ top: trainingDashboardScrollPosition, behavior: "auto" \}\)/);
+assert.match(source, /function rememberTrainingDashboardScrollPosition\(\)/);
+assert.match(source, /window\.scrollTo\(\{ top: returnPosition, behavior: "auto" \}\)/);
 assert.match(source, /function renderSavedProgramsView\(/);
 assert.match(source, /data-saved-program-id=/);
 assert.match(source, /window\.loadSavedProgram\?\.\(id\)/);
-const savedProgramsHandler = source.match(/function openModernSavedPrograms\(\) \{([\s\S]*?)\n  \}/)?.[1] || "";
+const savedProgramsHandler = source.match(/function openModernSavedPrograms\(options = \{\}\) \{([\s\S]*?)\n  \}/)?.[1] || "";
 assert.doesNotMatch(savedProgramsHandler, /scrollIntoView/, "Mine programmer opens as a view instead of scrolling the dashboard");
+assert.match(savedProgramsHandler, /restoreScrollState/);
+assert.match(source, /TRAINING_DASHBOARD_SCROLL_KEY/);
+assert.match(source, /storedTrainingDashboardScrollPosition/);
+assert.match(html, /openModernSavedPrograms\(\{ restoreScrollState: true \}\)/);
 assert.match(html, /class="saved-programs-view"/);
 assert.match(html, /aria-label="Tilbage til Træning"/);
 assert.match(html, />Vælg et gemt træningspas</);
@@ -83,12 +87,13 @@ assert.match(menuManager, /\.saved-programs-view\.open/);
 assert.match(source, /function openModernProgramGenerator\(/);
 assert.match(source, /openSurface\?\.\("program-creation-view"/);
 assert.match(source, /function closeProgramCreationView\(/);
-const programCreationHandler = source.match(/function openModernProgramGenerator\(\) \{([\s\S]*?)\n  \}/)?.[1] || "";
+const programCreationHandler = source.match(/function openModernProgramGenerator\(options = \{\}\) \{([\s\S]*?)\n  \}/)?.[1] || "";
 assert.doesNotMatch(programCreationHandler, /openToolPanel|scrollIntoView/, "Program creation opens as a full view instead of scrolling the dashboard");
+assert.match(programCreationHandler, /restoreScrollState/);
 assert.match(html, /class="program-creation-view"/);
 assert.match(html, /id="programCreationViewTitle" tabindex="-1">Opret nyt træningspas</);
 assert.match(html, /programCreationView[\s\S]*?id="programGeneratorAccess"/);
-assert.match(html, /view === "create-program"[\s\S]*?openModernProgramGenerator/);
+assert.match(html, /view === "create-program"[\s\S]*?openModernProgramGenerator\(\{ restoreScrollState: true \}\)/);
 assert.match(html, /closeProgramCreationView\?\.\(\{ restoreScroll: false, persist: false \}\)/);
 assert.match(authGate, /"create-program"/);
 assert.match(menuManager, /\.program-creation-view\.open/);
@@ -145,16 +150,16 @@ assert.match(css, /@media \(min-width: 760px\)/);
 assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
 
 for (const asset of ["modern-dashboard-ui.css", "modern-dashboard-ui.js"])
-  assert.match(html, new RegExp(`${asset.replace(".", "\\.")}\\?v=20260726-create-program-view1`));
+  assert.match(html, new RegExp(`${asset.replace(".", "\\.")}\\?v=20260730-create-program-scroll1`));
 assert.match(html, /work4it-icons\.js\?v=20260722-icon-system1/);
 for (const asset of ["profile-account.js", "membership.js"])
   assert.match(html, new RegExp(`${asset.replace(".", "\\.")}\\?v=20260721-modern-permanent1`));
 assert.match(html, /workit-menu-manager\.js\?v=20260726-create-program-view1/);
 assert.match(html, /auth-gate\.js\?v=20260726-create-program-view1/);
-assert.match(html, /service-worker\.js\?v=20260726-create-program-view1/);
-assert.match(serviceWorker, /work4it-shell-v134-create-program-view1/);
+assert.match(html, /service-worker\.js\?v=20260730-create-program-scroll1/);
+assert.match(serviceWorker, /work4it-shell-v136-create-program-scroll1/);
 for (const asset of ["modern-dashboard-ui.css", "modern-dashboard-ui.js"])
-  assert.match(serviceWorker, new RegExp(`${asset.replace(".", "\\.")}\\?v=20260726-create-program-view1`));
+  assert.match(serviceWorker, new RegExp(`${asset.replace(".", "\\.")}\\?v=20260730-create-program-scroll1`));
 assert.match(serviceWorker, /work4it-icons\.js\?v=20260722-icon-system1/);
 for (const asset of ["profile-account.js", "membership.js"])
   assert.match(serviceWorker, new RegExp(`${asset.replace(".", "\\.")}\\?v=20260721-modern-permanent1`));
@@ -231,7 +236,10 @@ const savedViewWindow = {
   scrollY: 427,
   addEventListener(type, handler) { savedViewEvents.set(type, handler); },
   requestAnimationFrame(callback) { callback(); },
-  scrollTo(options) { savedViewCalls.restoredScroll = options.top; },
+  scrollTo(options) {
+    savedViewCalls.restoredScroll = options.top;
+    this.scrollY = options.top;
+  },
   saveLastActiveView(view) { savedViewCalls.savedView = view; },
   loadSavedProgram(id) { savedViewCalls.loadedProgram = id; },
   openWorkoutEditor() { savedViewCalls.editorOpened += 1; },
@@ -255,9 +263,16 @@ const savedViewDocument = {
   addEventListener(type, handler) { savedViewEvents.set(type, handler); },
   querySelectorAll: () => []
 };
+const savedViewStorageValues = new Map();
+const savedViewStorage = {
+  getItem(key) { return savedViewStorageValues.get(key) ?? null; },
+  setItem(key, value) { savedViewStorageValues.set(key, String(value)); }
+};
 vm.runInNewContext(source, {
   window: savedViewWindow,
   document: savedViewDocument,
+  sessionStorage: savedViewStorage,
+  localStorage: savedViewStorage,
   console,
   CustomEvent: class CustomEvent {}
 });
@@ -272,6 +287,12 @@ assert.equal(savedViewWindow.closeProgramCreationView(), true);
 assert.equal(savedViewElements.programCreationView.classList.contains("open"), false);
 assert.equal(savedViewCalls.restoredScroll, 427);
 assert.equal(savedViewCalls.savedView, "program");
+assert.equal(savedViewStorage.getItem("work4it:trainingDashboardScrollPosition"), "427");
+savedViewWindow.scrollY = 0;
+savedViewCalls.restoredScroll = null;
+assert.equal(savedViewWindow.openModernProgramGenerator({ restoreScrollState: true }), true);
+assert.equal(savedViewWindow.closeProgramCreationView(), true);
+assert.equal(savedViewCalls.restoredScroll, 427, "Program creation restores the prior Training scroll position after refresh/app-resume");
 assert.equal(savedViewWindow.openModernSavedPrograms(), true);
 assert.equal(savedViewElements.savedProgramsView.classList.contains("open"), true);
 assert.equal(savedViewElements.savedProgramsView.getAttribute("aria-hidden"), "false");
@@ -282,6 +303,12 @@ assert.match(savedViewElements.savedProgramsViewList.innerHTML, /Åbn og redigé
 assert.equal(savedViewWindow.closeSavedProgramsView(), true);
 assert.equal(savedViewCalls.restoredScroll, 427);
 assert.equal(savedViewCalls.savedView, "program");
+assert.equal(savedViewStorage.getItem("work4it:trainingDashboardScrollPosition"), "427");
+savedViewWindow.scrollY = 0;
+savedViewCalls.restoredScroll = null;
+assert.equal(savedViewWindow.openModernSavedPrograms({ restoreScrollState: true }), true);
+assert.equal(savedViewWindow.closeSavedProgramsView(), true);
+assert.equal(savedViewCalls.restoredScroll, 427, "Refresh/app-resume restores the prior Training scroll position");
 savedViewWindow.openModernSavedPrograms();
 assert.equal(savedViewWindow.openModernSavedProgram("program-1"), true);
 assert.equal(savedViewCalls.loadedProgram, "program-1");

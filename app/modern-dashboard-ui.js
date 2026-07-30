@@ -42,12 +42,32 @@
   let activeCategory = "training";
   let activeAction = "today";
   let trainingDashboardScrollPosition = 0;
+  const TRAINING_DASHBOARD_SCROLL_KEY = "work4it:trainingDashboardScrollPosition";
 
   const byId = id => document.getElementById(id);
   const escapeHtml = value => String(value ?? "")
     .replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;").replaceAll("'", "&#039;");
   const iconMarkup = name => window.Work4itIcons?.markup?.(name) || `<span aria-hidden="true">${escapeHtml(name)}</span>`;
+
+  function storedTrainingDashboardScrollPosition() {
+    try {
+      const value = Number(sessionStorage.getItem(TRAINING_DASHBOARD_SCROLL_KEY) ||
+        localStorage.getItem(TRAINING_DASHBOARD_SCROLL_KEY) || 0);
+      return Number.isFinite(value) && value >= 0 ? value : 0;
+    } catch {
+      return 0;
+    }
+  }
+
+  function rememberTrainingDashboardScrollPosition() {
+    trainingDashboardScrollPosition = Math.max(0, Number(window.scrollY) || 0);
+    try {
+      sessionStorage.setItem(TRAINING_DASHBOARD_SCROLL_KEY, String(trainingDashboardScrollPosition));
+      localStorage.setItem(TRAINING_DASHBOARD_SCROLL_KEY, String(trainingDashboardScrollPosition));
+    } catch {}
+    return trainingDashboardScrollPosition;
+  }
 
   function snapshot() {
     return window.Work4itDashboardRuntime?.getSnapshot?.() || { loading: true, view: null, programs: [] };
@@ -221,11 +241,15 @@
     return true;
   }
 
-  function openModernProgramGenerator() {
+  function openModernProgramGenerator(options = {}) {
     const view = byId("programCreationView");
     const access = byId("programGeneratorAccess");
     if (!view || !access) return false;
-    if (!view.classList.contains("open")) trainingDashboardScrollPosition = window.scrollY || 0;
+    if (!view.classList.contains("open")) {
+      trainingDashboardScrollPosition = options.restoreScrollState === true
+        ? storedTrainingDashboardScrollPosition()
+        : rememberTrainingDashboardScrollPosition();
+    }
     closeToolPanel();
     window.WorkitMenuManager?.openSurface?.("program-creation-view", {
       roots: () => [view],
@@ -252,15 +276,22 @@
     if (!options.fromManager) window.WorkitMenuManager?.notifySurfaceClosed?.("program-creation-view");
     if (options.persist !== false) window.saveLastActiveView?.("program");
     if (options.restoreScroll !== false) {
-      window.requestAnimationFrame(() => window.scrollTo({ top: trainingDashboardScrollPosition, behavior: "auto" }));
+      const returnPosition = Number.isFinite(trainingDashboardScrollPosition)
+        ? trainingDashboardScrollPosition
+        : storedTrainingDashboardScrollPosition();
+      window.requestAnimationFrame(() => window.scrollTo({ top: returnPosition, behavior: "auto" }));
     }
     return true;
   }
 
-  function openModernSavedPrograms() {
+  function openModernSavedPrograms(options = {}) {
     const view = byId("savedProgramsView");
     if (!view) return false;
-    if (!view.classList.contains("open")) trainingDashboardScrollPosition = window.scrollY || 0;
+    if (!view.classList.contains("open")) {
+      trainingDashboardScrollPosition = options.restoreScrollState === true
+        ? storedTrainingDashboardScrollPosition()
+        : rememberTrainingDashboardScrollPosition();
+    }
     closeToolPanel();
     renderSavedProgramsView();
     window.WorkitMenuManager?.openSurface?.("saved-programs-view", {
@@ -323,7 +354,10 @@
     if (!options.fromManager) window.WorkitMenuManager?.notifySurfaceClosed?.("saved-programs-view");
     if (options.persist !== false) window.saveLastActiveView?.("program");
     if (options.restoreScroll !== false) {
-      window.requestAnimationFrame(() => window.scrollTo({ top: trainingDashboardScrollPosition, behavior: "auto" }));
+      const returnPosition = Number.isFinite(trainingDashboardScrollPosition)
+        ? trainingDashboardScrollPosition
+        : storedTrainingDashboardScrollPosition();
+      window.requestAnimationFrame(() => window.scrollTo({ top: returnPosition, behavior: "auto" }));
     }
     return true;
   }

@@ -65,8 +65,8 @@ function createStore({ user = { uid: "uid-1" }, cloudSave = async () => true } =
   assert.match(html, /wizard-store\.js\?v=20260718-profile-cloud1/);
   assert.match(html, /profile-account\.js\?v=20260721-modern-permanent1/);
   assert.match(html, /firestore-cloud-service\.js\?v=20260726-permission-retry1/);
-  assert.match(html, /service-worker\.js\?v=20260726-create-program-view1/);
-  assert.match(serviceWorker, /work4it-shell-v134-create-program-view1/);
+  assert.match(html, /service-worker\.js\?v=20260730-create-program-scroll1/);
+  assert.match(serviceWorker, /work4it-shell-v136-create-program-scroll1/);
 
   console.log("Profile local-first and confirmed Cloud-save scenarios passed");
 })().catch(error => {
