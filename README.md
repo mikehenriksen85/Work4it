@@ -1,165 +1,111 @@
 # Work4it
 
-Work4it er en dansk træningsapp til planlægning, registrering og analyse af træning.
+Work4it er en dansk, mobile-first PWA til planlægning, registrering og analyse
+af styrke-, cardio- og calisthenicstræning.
 
-## Funktioner
+## Centrale funktioner
 
-- Opret og gem træningspas
-- Manuel og automatisk valg af øvelser
-- Egne øvelser gemt lokalt
-- Sæt, vægt, reps og pause-timere
-- Automatisk pauseforslag og estimeret træningstid
-- Live progress-ring for gennemførte sæt
-- Estimeret 1RM og træningsvolumen
-- Simulering af fremgang
-- Dashboard og træningshistorik
-- Siden Min udvikling med diagrammer og kropsmål
-- Papirkurv med gendannelse og automatisk sletning efter 30 dage
-- Separat profil-wizard til nye brugere
-- Kort daglig start-wizard til kendte brugere
-- Profilredigering og lokalt gemte træningspræferencer
-- Målstyret programgenerator for muskelopbygning, vægttab, styrke og generel sundhed
-- Målbaserede øvelsesvalg, rep-intervaller, sæt, pauser, split og Copilot-anbefalinger
-- Fler-dages træningsprogrammer med dag-navigation og separat dagsdata
-- Medlemskabsside med gratisversion, 10 dages Premium-prøveperiode og demo-planer
-- Automatisk prøveudløb uden sletning af brugerdata
-- Premium-markeringer og lokal adgangskontrol, klar til senere betalingsintegration
-- Lokal lagring i browseren
+- Oprettelse, import og AI-generering af træningsprogrammer
+- Aktiv træning med sæt, kg, reps, tid, pause og autosave
+- Firestore som primær cloudlagring med lokal offline-fallback
+- Firebase Authentication med email/password og Google-login
+- Historik, statistik, kropsmål, progression, volumen og estimeret 1RM
+- AI Coach og målbaseret programtilpasning
+- Stripe Checkout, webhookbaseret medlemskab og administrator-testflow
+- Interne øvelsesanimationer og PWA-cache
+- Responsivt Modern Dashboard UI til mobil, tablet og desktop
 
-## Projektstruktur
+## Kom hurtigt i gang
 
-```text
-.
-├── index.html
-├── training-goal-engine.js
-├── workout-program-store.js
-├── wizard-store.js
-├── profile-wizard.js
-├── daily-start-wizard.js
-├── wizard-controller.js
-├── membership.js
-├── QA-REPORT.md
-├── serve.cjs
-├── package.json
-├── .gitignore
-├── .nojekyll
-├── LICENSE
-└── README.md
-```
-
-## Kør lokalt
-
-Appen kan åbnes direkte via `index.html`.
-
-Den kan også startes med Node.js:
+Krav: Node.js 22 og npm.
 
 ```bash
+npm install
 npm start
 ```
 
 Åbn derefter:
 
 ```text
-http://127.0.0.1:8767/index.html
+http://127.0.0.1:8767/app/index.html
 ```
 
-Der kræves ingen installation af dependencies.
+## Projektstruktur
 
-## Profil- og start-wizard
-
-De to flows ligger i separate komponenter:
-
-- `profile-wizard.js` bruges til førstegangsopsætning og profilredigering.
-- `daily-start-wizard.js` hjælper kendte brugere i gang med dagens træning.
-- `wizard-store.js` gemmer profil, motivation og seneste aktive træningspas.
-- `wizard-controller.js` vælger det korrekte flow ved opstart.
-
-Komponenterne aktiveres eller deaktiveres nederst i `index.html`:
-
-```javascript
-window.ENABLE_PROFILE_WIZARD = true;
-window.ENABLE_DAILY_START_WIZARD = true;
+```text
+app/          Kanonisk PWA og Firebase Hosting-kilde
+functions/    Firebase Cloud Functions
+public/       Officielle billeder og lyde
+scripts/      Asset- og projektværktøjer
+tests/        Kontrakt- og regressionstests
+docs/         Teknisk dokumentation
+website/      Separat offentligt website og juridiske dokumenter
 ```
 
-Sæt et flag til `false` for at deaktivere det pågældende flow. Profil-wizarden
-vises kun automatisk, indtil profilopsætningen er gennemført. Derefter vises
-den korte daglige wizard ved appstart. Den fulde profilopsætning kan altid
-åbnes igen fra profilområdet i venstremenuen.
+Firebase Hosting deployer `app/`. Flere ældre filer findes stadig i projektroden;
+de er dokumenteret som teknisk gæld og må ikke bruges til nye ændringer.
 
-Profil-wizarden genererer ét forskelligt træningspas pr. valgt træningsdag. Alle
-genererede pas gemmes under **Gemte Træningspas**, og det første pas åbnes
-automatisk i træningsvinduet.
+Se [ARCHITECTURE.md](ARCHITECTURE.md) for dataflow og komponentansvar.
 
-## Målstyret træning
+## Branch-model
 
-`training-goal-engine.js` er den fælles regelmotor for træningsmål. Den bruges
-af profil-wizarden, den automatiske programgenerator, AI Erstat og Canvas
-Copilot.
+- `main`: stabil produktionsgren
+- `develop`: aktiv udviklings- og integrationsgren
+- korte `feature/*`, `fix/*` og `docs/*` branches oprettes fra `develop`
 
-- **Muskelopbygning:** 6-15 reps, moderat til høj volumen og hypertrofi-split.
-- **Vægttab:** helkropsrotation, store bevægelser, korte pauser og høj tæthed.
-- **Styrke:** tunge basisløft, typisk 3-6 reps og lange pauser.
-- **Generel sundhed:** balanceret styrke, stabilitet og funktionel træning.
+Se [udviklingsvejledningen](docs/DEVELOPMENT.md).
 
-Brugerens direkte ændringer af vægt, reps og manuelle pauser har fortsat
-forrang. Når profilmålet ændres, bruges det nye mål til fremtidige programmer
-og Copilot-forslag.
+## Tests
 
-## Fler-dages programmer
+Kør de relevante pakker før merge:
 
-Wizard-programmer gemmes som én programbeholder med separate dage. Hvis
-brugeren vælger tre træningsdage, vises **Dag 1**, **Dag 2** og **Dag 3** i
-træningsvinduet. Hver dag har egne øvelser, sæt, reps, pauser og timer.
+```bash
+npm run test:ai-coach
+npm run test:subscriptions
+npm run test:cloud-storage
+npm run test:dashboard
+npm run test:animations
+npm run test:completion-analysis
+npm run test:progression
+npm run test:assets
+```
 
-`workout-program-store.js` normaliserer programdata og gør eksisterende
-enkeltpas bagudkompatible ved at behandle dem som programmer med én dag.
-Eksisterende data migreres først til det nye format, når brugeren gemmer.
+## Firebase
 
-AI Copilot understøtter blandt andet:
+Firebase CLI er bundet til projektet `workout-b55ed` gennem `.firebaserc`.
+Applikationen bruger Authentication, Firestore, Functions, Storage og to Hosting-targets.
 
-- `Vis Dag 2`
-- `Næste dag`
-- `Forrige dag`
-- `Tilføj mere ryg`
-- `Flyt øvelse 2 til Dag 3`
-- `Flyt biceps til Dag 3`
+```bash
+firebase use
+firebase target
+```
 
-## GitHub Pages
+Se [Firebase-opsætningen](docs/FIREBASE_SETUP.md) før ændringer af regler,
+Functions, secrets eller hosting.
 
-1. Upload alle filer til roden af et GitHub-repository.
-2. Åbn repositoryets **Settings**.
-3. Vælg **Pages**.
-4. Vælg **Deploy from a branch**.
-5. Vælg branch `main` og mappe `/ (root)`.
+## Miljø og secrets
 
-Appen bliver derefter udgivet direkte fra `index.html`.
+Repositoryet kræver ikke lokale klienthemmeligheder. Stripe-nøgler administreres som
+Firebase Functions secrets:
 
-## Medlemskab
+- `STRIPE_SECRET_KEY`
+- `STRIPE_WEBHOOK_SECRET`
 
-`membership.js` håndterer medlemskabsstatus lokalt i browseren. Nye brugere får
-automatisk 10 dages Premium-prøveperiode. Når perioden udløber, skifter appen
-til gratisversionen uden at ændre eller slette træningsdata.
+`.env`, `.env.local` og produktionsvarianter ignoreres af Git. `.env.example`
+indeholder kun variabelnavne og må aldrig indeholde værdier.
 
-Planerne 3 måneder, 12 måneder og livstid er kun demo/test. Der gennemføres
-ingen betaling. Modulet gemmer den valgte plan og de relevante start- og
-slutdatoer i `localStorage`, så strukturen senere kan forbindes til et
-betalingssystem og Firebase.
+## Sikkerhed
 
-## Data
+- Firestore-regler: `firestore.rules`
+- Storage-regler: `storage.rules`
+- Firestore-indekser: `firestore.indexes.json`
+- Licens: [MIT](LICENSE)
 
-Når brugeren er logget ind og har accepteret migrationen, er Firestore den
-primære datakilde. `localStorage` bevares som lokal backup og fallback.
-Eksisterende lokale data slettes ikke under migrationen.
+App Check er endnu ikke integreret og er dokumenteret som en prioriteret
+sikkerhedsforbedring i Firebase-vejledningen.
 
-Firebase-filer:
+## Deployment
 
-- `firebase-config.js`: initialiserer Firebase App, Authentication og Firestore.
-- `auth-service.js`: håndterer login og Firebase-sessionen.
-- `auth-gate.js`: låser appen, indtil en gyldig session er bekræftet.
-- `firestore-service.js`: migration, hydrering og løbende synkronisering.
-- `firestore.rules`: forslag til brugerafgrænsede Firestore Security Rules.
-- `FIRESTORE-INTEGRATION.md`: datastruktur og migrationsbeskrivelse.
-
-## Licens
-
-MIT License. Se `LICENSE`.
+Deployment udføres manuelt og separat fra almindelig udvikling. Kontrollér altid
+aktivt projekt og target før en deployment. Der deployes aldrig automatisk fra denne
+dokumentation.

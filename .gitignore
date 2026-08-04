@@ -1,9 +1,38 @@
 .DS_Store
 Thumbs.db
+Desktop.ini
 *.log
+*.tmp
+*.temp
+*.swp
+*~
 .vscode/
 .idea/
 node_modules/
+dist/
+build/
+coverage/
+.firebase/
+.firebase-cache/
+.cache/
+cache/
+tmp/
+temp/
+.vite/
+functions/lib/
+
+# Lokale miljøfiler må aldrig versionsstyres.
+.env
+.env.local
+.env.production
+.env.*.local
+!.env.example
+
+# Lokale engangs-/backupfiler.
+website/stripe_backup_code.txt
+/.js appindex.html*
+/download
+/download (1)
 
 # Generated from the official source in public/Pictures.
 app/Pictures/
