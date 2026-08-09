@@ -208,38 +208,10 @@ body {
 
 .modern-feature-card {
   position: relative;
-  min-height: 220px;
-  display: grid;
-  align-content: space-between;
-  gap: var(--modern-space-4);
-  overflow: hidden;
-  padding: clamp(20px, 5vw, 30px);
-  border: 1px solid color-mix(in srgb, var(--blue), transparent 48%);
-  border-radius: var(--modern-radius-lg);
-  background: radial-gradient(circle at 88% 16%, color-mix(in srgb, var(--green), transparent 70%), transparent 28%),
-    linear-gradient(135deg, color-mix(in srgb, var(--blue), var(--card) 22%), color-mix(in srgb, var(--blue), var(--card) 60%));
-  color: #fff;
-  box-shadow: 0 20px 44px rgba(0,0,0,.24);
+  min-width: 0;
+  display: block;
 }
 
-.modern-feature-art {
-  position: absolute;
-  right: 22px;
-  top: 14px;
-  color: rgba(255,255,255,.72);
-  font-size: clamp(3.25rem, 12vw, 5.25rem);
-  opacity: .16;
-  transform: rotate(-7deg);
-  pointer-events: none;
-}
-
-.modern-feature-copy { position: relative; z-index: 1; max-width: min(78%, 620px); }
-.modern-feature-eyebrow { color: rgba(255,255,255,.78); font-size: var(--font-size-small); font-weight: var(--font-weight-semibold); }
-.modern-feature-title { margin: 8px 0 6px; color: #fff; font-size: clamp(1.5rem, 6vw, 2.25rem); line-height: 1.12; }
-.modern-feature-description { margin: 0; color: rgba(255,255,255,.88); line-height: 1.5; }
-.modern-feature-meta { margin-top: 10px; color: rgba(255,255,255,.76); font-size: var(--font-size-small); line-height: 1.4; }
-
-.modern-feature-open,
 .modern-primary-button {
   position: relative;
   z-index: 1;
@@ -255,15 +227,6 @@ body {
   font: inherit;
   font-weight: var(--font-weight-bold);
 }
-
-.modern-feature-open:disabled {
-  border: 1px solid var(--border);
-  background: color-mix(in srgb, var(--input), white 5%);
-  color: var(--text-secondary);
-  cursor: not-allowed;
-}
-
-.modern-feature-open.destructive { background: var(--red); color: #fff; }
 
 .modern-feature-card.has-inline-content {
   min-height: 0;
@@ -292,10 +255,15 @@ body {
 .modern-feature-card .modern-inline-view > :first-child { width: 100%; max-width: none; margin: 0; }
 .modern-feature-card .profile-account-view.modern-inline-view .profile-account-head,
 .modern-feature-card .profile-account-view.modern-inline-view .profile-account-intro,
-.modern-feature-card .profile-account-view.modern-inline-view .profile-account-tabs,
 .modern-feature-card .membership-view.modern-inline-view .membership-head,
 .modern-feature-card .ai-coach-panel.modern-inline-view .ai-coach-head .close { display: none !important; }
 .modern-feature-card .profile-account-view.modern-inline-view .profile-account-shell { width: 100%; gap: 0; }
+.modern-feature-card .profile-account-view.modern-inline-view .profile-account-tabs { display: flex; }
+.modern-feature-card .profile-account-view.modern-inline-view .profile-account-columns { display: block; }
+.modern-feature-card .profile-account-view.modern-inline-view .profile-account-column.account {
+  padding-right: 0;
+  border-right: 0;
+}
 .modern-feature-card .membership-view.modern-inline-view .membership-shell { width: 100%; max-height: none; overflow: visible; margin: 0; }
 .modern-feature-card .ai-coach-panel.modern-inline-view .ai-coach-sheet {
   width: 100%;
@@ -1007,7 +975,6 @@ body {
 .modern-icon-tab:focus-visible,
 .profile-account-tab:focus-visible,
 .profile-account-back:focus-visible,
-.modern-feature-open:focus-visible,
 .modern-mini-card:focus-visible,
 .modern-bottom-tab:focus-visible,
 .modern-tool-panel button:focus-visible,
@@ -1043,7 +1010,6 @@ button { font-family: var(--font-primary); }
 
 @media (min-width: 760px) {
   .modern-card-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .modern-feature-card { min-height: 250px; }
 }
 
 @media (max-width: 560px) {
@@ -1051,8 +1017,6 @@ button { font-family: var(--font-primary); }
   .app-header .nav-btn { min-width: 0; padding-inline: 9px; font-size: 12px; }
   .canvas { padding-inline: 12px; }
   .modern-membership-status { max-width: 88px; }
-  .modern-feature-copy { max-width: 90%; }
-  .modern-feature-open,
   .modern-primary-button { width: 100%; }
   .modern-card-grid { grid-template-columns: 1fr; }
   .modern-mini-card { min-height: 64px; padding: 11px 13px; }

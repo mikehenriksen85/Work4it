@@ -5,11 +5,11 @@
     user: {
       label: "Bruger",
       actions: [
-        { id: "profile", icon: "profile", tone: "cyan", label: "Profil og konto", description: "Personlige oplysninger, konto og sikkerhed.", handler: "openProfileSetup", cta: "Åbn profil" },
-        { id: "training-profile", icon: "target", tone: "orange", label: "Træningsprofil", description: "Mål, niveau, udstyr og træningssted.", handler: "openProfileWizardFromMenu", cta: "Tilpas profil" },
-        { id: "membership", icon: "membership", tone: "amber", label: "Medlemskab", description: "Adgang, AI Requests og abonnement.", handler: "openMembershipView", cta: "Se medlemskab" },
-        { id: "ai-coach", icon: "coach", tone: "violet", label: "AI Coach", description: "Tilpas program og profil med Work4it Coach.", handler: "openAiCoach", cta: "Åbn AI Coach" },
-        { id: "settings", icon: "settings", tone: "blue", label: "Indstillinger", description: "Tema, auto-pause og appindstillinger.", handler: "openModernSettings", cta: "Åbn indstillinger" }
+        { id: "profile", icon: "profile", tone: "cyan", label: "Profil og konto", handler: "openProfileSetup" },
+        { id: "training-profile", icon: "target", tone: "orange", label: "Træningsprofil", handler: "openProfileWizardFromMenu" },
+        { id: "membership", icon: "membership", tone: "amber", label: "Medlemskab", handler: "openMembershipView" },
+        { id: "ai-coach", icon: "coach", tone: "violet", label: "AI Coach", handler: "openAiCoach" },
+        { id: "settings", icon: "settings", tone: "blue", label: "Indstillinger", handler: "openModernSettings" }
       ]
     },
     training: {
@@ -185,18 +185,15 @@
     }
     const action = actionState(selectedAction());
     if (embeddedView?.actionId === action.id && panel.contains(embeddedView.root)) return;
+    if (mountInlineAction(action.id)) return;
     restoreEmbeddedView();
     panel.dataset.tone = action.tone || "blue";
-    panel.classList.remove("has-inline-content");
+    panel.classList.add("has-inline-content");
     panel.setAttribute("aria-labelledby", `modern-tab-${action.id}`);
-    panel.innerHTML = `
-      <div class="modern-feature-copy">
-        <span class="modern-feature-eyebrow">${escapeHtml(CATEGORIES[activeCategory].label)}</span>
-        <h2 class="modern-feature-title">${escapeHtml(action.title || action.label)}</h2>
-        <p class="modern-feature-description">${escapeHtml(action.description || "")}</p>
-        ${action.meta ? `<div class="modern-feature-meta">${escapeHtml(action.meta)}</div>` : ""}
-      </div>
-      <span class="modern-feature-art modern-icon" aria-hidden="true">${iconMarkup(action.icon)}</span>`;
+    panel.innerHTML = `<div class="modern-inline-action-content modern-inline-view" role="status">
+      <h2>${escapeHtml(action.label)}</h2>
+      <p>Indholdet kunne ikke indlæses. Prøv at vælge sektionen igen.</p>
+    </div>`;
   }
 
   function restoreEmbeddedView() {
@@ -636,10 +633,6 @@
     if (!visibleActions().some(action => action.id === actionId)) return false;
     activeAction = actionId;
     render();
-    if (activeCategory !== "training") {
-      const mounted = mountInlineAction(actionId);
-      if (!mounted) invokeAction(actionId);
-    }
     window.requestAnimationFrame(() => byId(`modern-tab-${actionId}`)?.scrollIntoView?.({ behavior: "smooth", block: "nearest", inline: "center" }));
     byId("modernFeaturePanel")?.scrollIntoView?.({ behavior: "smooth", block: "nearest" });
     return true;
@@ -651,7 +644,6 @@
     activeAction = CATEGORIES[category].actions[0].id;
     closeToolPanel();
     render();
-    if (category !== "training") window.requestAnimationFrame(() => mountInlineAction(activeAction) || invokeAction(activeAction));
     byId("modernDashboardUI")?.scrollIntoView?.({ behavior: "smooth", block: "start" });
     return true;
   }

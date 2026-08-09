@@ -99,9 +99,12 @@ for (const action of ["profile", "training-profile", "membership", "ai-coach", "
 }
 const featureRenderer = source.match(/function renderFeature\(\) \{([\s\S]*?)\n  \}/)?.[1] || "";
 assert.doesNotMatch(featureRenderer, /modern-feature-open|data-modern-open/, "top navigation has no redundant open button");
+assert.doesNotMatch(featureRenderer, /modern-feature-copy|modern-feature-description|modern-feature-art/, "Bruger og Mere never render preview cards");
+assert.match(featureRenderer, /if \(mountInlineAction\(action\.id\)\) return;/, "selected content mounts directly during render");
+assert.doesNotMatch(source, /cta: "(?:Ã…bn profil|Tilpas profil|Se medlemskab|Ã…bn AI Coach|Ã…bn indstillinger)"/, "user navigation has no redundant intermediate CTA");
 assert.match(source, /function mountInlineAction\(actionId\)/);
 assert.match(source, /function restoreEmbeddedView\(\)/);
-assert.match(source, /if \(activeCategory !== "training"\) \{[\s\S]*?mountInlineAction\(actionId\)/);
+assert.doesNotMatch(source, /if \(activeCategory !== "training"\) \{[\s\S]*?mountInlineAction\(actionId\)/, "mounting is not deferred until after a preview render");
 assert.match(source, /openProfileAccountView\?\.\(\{ embedded: true, section: config\.section \}\)/);
 assert.match(source, /openMembershipView\?\.\(\{ embedded: true \}\)/);
 assert.match(source, /openAiCoach\?\.\(\{ embedded: true \}\)/);
@@ -117,6 +120,8 @@ assert.match(profileWizardSource, /wizard-embedded-root/);
 assert.match(css, /\.modern-feature-card\.has-inline-content/);
 assert.match(css, /\.modern-feature-card \.modern-inline-view/);
 assert.match(css, /\.profile-account-view\.modern-inline-view \.profile-account-tabs/);
+assert.match(css, /\.profile-account-view\.modern-inline-view \.profile-account-tabs \{ display: flex; \}/);
+assert.doesNotMatch(css, /profile-account-tabs,[\s\S]{0,160}display: none !important/, "embedded profile keeps its section navigation visible");
 assert.match(css, /\.modern-inline-action-content\.modern-inline-view/);
 assert.match(css, /#profile-wizard-root\.modern-inline-view \.wizard-overlay/);
 assert.match(source, /rail\.hidden = activeCategory === "training"/);
@@ -238,21 +243,21 @@ assert.match(css, /@media \(min-width: 760px\)/);
 assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
 
 for (const asset of ["modern-dashboard-ui.css", "modern-dashboard-ui.js"])
-  assert.match(html, new RegExp(`${asset.replace(".", "\\.")}\\?v=20260809-inline-navigation1`));
+  assert.match(html, new RegExp(`${asset.replace(".", "\\.")}\\?v=20260809-direct-navigation1`));
 assert.match(html, /work4it-icons\.js\?v=20260722-icon-system1/);
-assert.match(html, /profile-account\.js\?v=20260809-inline-navigation1/);
-assert.match(html, /profile-wizard\.js\?v=20260809-inline-navigation1/);
-assert.match(html, /membership\.js\?v=20260809-inline-navigation1/);
+assert.match(html, /profile-account\.js\?v=20260809-direct-navigation1/);
+assert.match(html, /profile-wizard\.js\?v=20260809-direct-navigation1/);
+assert.match(html, /membership\.js\?v=20260809-direct-navigation1/);
 assert.match(html, /workit-menu-manager\.js\?v=20260809-strength-all1/);
 assert.match(html, /auth-gate\.js\?v=20260809-strength-all1/);
-assert.match(html, /service-worker\.js\?v=20260809-inline-navigation1/);
-assert.match(serviceWorker, /work4it-shell-v144-inline-navigation1/);
+assert.match(html, /service-worker\.js\?v=20260809-direct-navigation1/);
+assert.match(serviceWorker, /work4it-shell-v145-direct-navigation1/);
 for (const asset of ["modern-dashboard-ui.css", "modern-dashboard-ui.js"])
-  assert.match(serviceWorker, new RegExp(`${asset.replace(".", "\\.")}\\?v=20260809-inline-navigation1`));
+  assert.match(serviceWorker, new RegExp(`${asset.replace(".", "\\.")}\\?v=20260809-direct-navigation1`));
 assert.match(serviceWorker, /work4it-icons\.js\?v=20260722-icon-system1/);
-assert.match(serviceWorker, /profile-account\.js\?v=20260809-inline-navigation1/);
-assert.match(serviceWorker, /profile-wizard\.js\?v=20260809-inline-navigation1/);
-assert.match(serviceWorker, /membership\.js\?v=20260809-inline-navigation1/);
+assert.match(serviceWorker, /profile-account\.js\?v=20260809-direct-navigation1/);
+assert.match(serviceWorker, /profile-wizard\.js\?v=20260809-direct-navigation1/);
+assert.match(serviceWorker, /membership\.js\?v=20260809-direct-navigation1/);
 assert.match(serviceWorker, /workit-menu-manager\.js\?v=20260809-strength-all1/);
 assert.match(serviceWorker, /auth-gate\.js\?v=20260809-strength-all1/);
 

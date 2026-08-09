@@ -1,4 +1,4 @@
-const CACHE_NAME = "work4it-shell-v144-inline-navigation1";
+const CACHE_NAME = "work4it-shell-v145-direct-navigation1";
 const ANIMATION_CACHE_NAME = "work4it-exercise-animations-v1";
 const APP_SHELL = [
   "./",
@@ -13,9 +13,9 @@ const APP_SHELL = [
   "./dashboard-view-model.js?v=20260718-dashboard-buttons1",
   "./workout-heatmap.js?v=20260718-heatmap1",
   "./progression.css?v=20260718-progression1",
-  "./modern-dashboard-ui.css?v=20260809-inline-navigation1",
+  "./modern-dashboard-ui.css?v=20260809-direct-navigation1",
   "./work4it-icons.js?v=20260722-icon-system1",
-  "./modern-dashboard-ui.js?v=20260809-inline-navigation1",
+  "./modern-dashboard-ui.js?v=20260809-direct-navigation1",
   "./progression-service.js?v=20260718-progression1",
   "./completed-workout-analysis.js?v=20260716-completion-analysis2",
   "./vendor/three/three.module.min.js",
@@ -34,7 +34,7 @@ const APP_SHELL = [
   "./daily-start-wizard.js?v=20260615-window1",
   "./wizard-controller.js?v=20260622-fixed-routing1",
   "./stripe-config.js?v=20260712-home-center1",
-  "./membership.js?v=20260809-inline-navigation1",
+  "./membership.js?v=20260809-direct-navigation1",
   "./stripe-checkout.js?v=20260713-admin-subscription-test1",
   "./ai-system.js?v=20260715-exercise-animations1",
   "./ai-copilot-actions.js?v=20260713-ai-coach1",
@@ -43,8 +43,8 @@ const APP_SHELL = [
   "./password-visibility.js?v=20260621-password-toggle1",
   "./auth-gate.js?v=20260809-strength-all1",
   "./theme-service.js?v=20260627-theme1",
-  "./profile-account.js?v=20260809-inline-navigation1",
-  "./profile-wizard.js?v=20260809-inline-navigation1",
+  "./profile-account.js?v=20260809-direct-navigation1",
+  "./profile-wizard.js?v=20260809-direct-navigation1",
   "./firebase-config.js?v=20260715-exercise-animations1",
   "./exercise-animation-cloud-service.js?v=20260716-backend-admin-read1",
   "./auth-service.js?v=20260713-stripe-google-login1",
