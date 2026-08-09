@@ -1,0 +1,31 @@
+# Written by MakeHuman 1.2.1 alpha
+version v1.2.1
+name Work4it_Athletic_Male.mhm
+camera 6.0 54.5 -0.060962209293666296 0.803400349203478 -0.07112057216337327 1.6500000000000004
+modifier torso/torso-scale-depth-decr|incr -1.000000
+modifier armslegs/r-hand-scale-decr|incr 0.472000
+modifier armslegs/l-hand-scale-decr|incr 0.542000
+modifier armslegs/r-lowerarm-scale-depth-decr|incr 1.000000
+modifier armslegs/r-lowerarm-scale-vert-decr|incr 1.000000
+modifier armslegs/r-lowerarm-muscle-decr|incr 0.028000
+modifier armslegs/r-upperarm-scale-depth-decr|incr 1.000000
+modifier armslegs/r-upperarm-shoulder-muscle-decr|incr 1.000000
+modifier armslegs/l-lowerarm-muscle-decr|incr 0.612000
+modifier armslegs/l-upperarm-scale-depth-decr|incr 1.000000
+modifier armslegs/l-upperarm-shoulder-muscle-decr|incr 1.000000
+modifier breast/BreastSize 0.889000
+modifier breast/BreastFirmness 0.500000
+modifier macrodetails/Gender 1.000000
+modifier macrodetails/Age 0.500000
+modifier macrodetails/African 0.000000
+modifier macrodetails/Asian 0.000000
+modifier macrodetails/Caucasian 1.000000
+modifier macrodetails-universal/Muscle 1.000000
+modifier macrodetails-universal/Weight 0.667000
+modifier macrodetails-height/Height 0.500000
+modifier macrodetails-proportions/BodyProportions 1.000000
+eyes HighPolyEyes 2c12f43b-1303-432c-b7ce-d78346baf2e6
+clothesHideFaces True
+skinMaterial skins/default.mhmat
+material HighPolyEyes 2c12f43b-1303-432c-b7ce-d78346baf2e6 eyes/materials/brown.mhmat
+subdivide False
