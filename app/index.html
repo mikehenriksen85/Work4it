@@ -55,7 +55,7 @@
   <link rel="apple-touch-icon" href="Pictures/App%20Ikon%20V1.png">
   <link rel="stylesheet" href="exercise-animation/mannequin.css?v=20260716-mannequin-prototype1">
   <link rel="stylesheet" href="progression.css?v=20260718-progression1">
-  <link rel="stylesheet" href="modern-dashboard-ui.css?v=20260730-create-program-scroll1">
+  <link rel="stylesheet" href="modern-dashboard-ui.css?v=20260809-profile-tabs1">
   <title>Work4it</title>
   <style>
     :root {
@@ -1040,6 +1040,7 @@
     .muscle-item:hover { background: rgba(58,147,255,.12); color: var(--text-accent); }
     .muscle-item.selected { background: rgba(74,222,128,.12); color: var(--text-success); }
     .exercise-picker-heading { display: flex; align-items: center; gap: 8px; }
+    .exercise-picker-heading > span { min-width: 0; flex: 1; }
     .exercise-picker-back {
       border: 0;
       background: transparent;
@@ -1048,6 +1049,24 @@
       font: inherit;
       font-weight: var(--font-weight-bold);
       padding: 0;
+    }
+    .exercise-picker-category-switch {
+      min-height: 36px;
+      padding: 6px 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-small);
+      background: var(--surface-elevated);
+      color: var(--text-accent);
+      font: inherit;
+      font-size: var(--font-size-small);
+      font-weight: var(--font-weight-bold);
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    .exercise-picker-category-switch:hover,
+    .exercise-picker-category-switch:focus-visible {
+      border-color: var(--text-accent);
+      outline: none;
     }
     .exercise-picker-list { min-height: 0; overflow-y: auto; }
     .copilot { border-top: 1px dashed var(--border); padding-top: 18px; }
@@ -2736,7 +2755,7 @@
     <button class="nav-btn" onclick="goHome()">Hovedmenu</button>
     <div class="app-title" aria-label="Work4it"><img class="brand-header-logo" src="Pictures/App%20Logo%20v1.png" alt="Work4it" width="1536" height="1024"><span class="brand-header-mobile"><img class="brand-header-icon" src="Pictures/App%20Ikon%20V1.png" alt="" width="1254" height="1254"><span class="brand-header-text" id="appTitleText">Work4it</span></span></div>
   </header>
-  <script src="workit-menu-manager.js?v=20260726-create-program-view1"></script>
+  <script src="workit-menu-manager.js?v=20260809-profile-tabs1"></script>
 
   <main class="canvas" id="programCanvas">
     <section class="card">
@@ -2766,6 +2785,7 @@
           </div>
         </section>
       </section>
+      <div id="workoutEditorHome" hidden></div>
       <details class="workout-editor-details" id="workoutEditorDetails">
         <summary>Se og redigér træningspas</summary>
         <div class="workout-editor-content">
@@ -2920,6 +2940,32 @@
     </div>
   </section>
 
+  <section class="calisthenics-workout-view" id="calisthenicsWorkoutView" aria-hidden="true" aria-labelledby="calisthenicsWorkoutViewTitle">
+    <div class="calisthenics-workout-view-shell">
+      <header class="calisthenics-workout-view-head">
+        <button class="calisthenics-workout-back" type="button" data-work4it-leading-icon="back" onclick="closeCalisthenicsWorkoutView()" aria-label="Tilbage til Træning">Tilbage</button>
+        <div>
+          <span class="calisthenics-workout-eyebrow">Træning</span>
+          <h1 id="calisthenicsWorkoutViewTitle" tabindex="-1">Opret Calisthenics-træningspas</h1>
+        </div>
+      </header>
+      <div class="calisthenics-workout-editor-host" id="calisthenicsWorkoutEditorHost"></div>
+    </div>
+  </section>
+
+  <section class="cardio-workout-view" id="cardioWorkoutView" aria-hidden="true" aria-labelledby="cardioWorkoutViewTitle">
+    <div class="cardio-workout-view-shell">
+      <header class="cardio-workout-view-head">
+        <button class="cardio-workout-back" type="button" data-work4it-leading-icon="back" onclick="closeCardioWorkoutView()" aria-label="Tilbage til Træning">Tilbage</button>
+        <div>
+          <span class="cardio-workout-eyebrow">Træning</span>
+          <h1 id="cardioWorkoutViewTitle" tabindex="-1">Opret Cardio-træningspas</h1>
+        </div>
+      </header>
+      <div class="cardio-workout-editor-host" id="cardioWorkoutEditorHost"></div>
+    </div>
+  </section>
+
   <section class="saved-programs-view" id="savedProgramsView" aria-hidden="true" aria-labelledby="savedProgramsViewTitle">
     <div class="saved-programs-view-shell">
       <header class="saved-programs-view-head">
@@ -2965,14 +3011,23 @@
   <section class="profile-account-view" id="profileAccountView" aria-hidden="true">
     <div class="profile-account-shell">
       <div class="profile-account-head">
-        <div class="profile-account-title-group"><img class="profile-account-logo" src="Pictures/App%20Logo%20v1.png" alt="Work4it" width="1536" height="1024" loading="lazy" decoding="async"><div class="profile-account-title">Profil og konto</div></div>
-        <button class="close" onclick="closeProfileAccountView()" aria-label="Luk">×</button>
+        <button class="profile-account-back" type="button" data-work4it-leading-icon="back" onclick="closeProfileAccountView()" aria-label="Tilbage til Bruger">Tilbage</button>
+        <div class="profile-account-title-group"><img class="profile-account-logo" src="Pictures/App%20Logo%20v1.png" alt="Work4it" width="1536" height="1024" loading="lazy" decoding="async"><div class="profile-account-title" id="profileAccountViewTitle" tabindex="-1">Profil og konto</div></div>
       </div>
       <p class="profile-account-intro">Administrér personlige oplysninger, træningsopsætning, konto og lokale data.</p>
 
+      <nav class="profile-account-tabs" id="profileAccountTabs" role="tablist" aria-label="Profil og konto" onkeydown="handleProfileAccountTabKey(event)">
+        <button class="profile-account-tab modern-tone-cyan" id="profileAccountTabPersonal" type="button" role="tab" data-profile-account-tab="personal" aria-controls="profileSectionPersonal" aria-selected="true" tabindex="0" onclick="selectProfileAccountSection('personal')"><span class="modern-icon" data-work4it-icon="profile" aria-hidden="true"></span><span>Personlige oplysninger</span></button>
+        <button class="profile-account-tab modern-tone-blue" id="profileAccountTabAccount" type="button" role="tab" data-profile-account-tab="account" aria-controls="profileSectionAccount" aria-selected="false" tabindex="-1" onclick="selectProfileAccountSection('account')"><span class="modern-icon" data-work4it-icon="user" aria-hidden="true"></span><span>Konto og login</span></button>
+        <button class="profile-account-tab modern-tone-red" id="profileAccountTabSecurity" type="button" role="tab" data-profile-account-tab="security" aria-controls="profileSectionSecurity" aria-selected="false" tabindex="-1" onclick="selectProfileAccountSection('security')"><span class="modern-icon" data-work4it-icon="privacy" aria-hidden="true"></span><span>Sikkerhed</span></button>
+        <button class="profile-account-tab modern-tone-orange" id="profileAccountTabTraining" type="button" role="tab" data-profile-account-tab="training" aria-controls="profileSectionTraining" aria-selected="false" tabindex="-1" onclick="selectProfileAccountSection('training')"><span class="modern-icon" data-work4it-icon="target" aria-hidden="true"></span><span>Træningsopsætning</span></button>
+        <button class="profile-account-tab modern-tone-green" id="profileAccountTabPrivacy" type="button" role="tab" data-profile-account-tab="privacy" aria-controls="profileSectionPrivacy" aria-selected="false" tabindex="-1" onclick="selectProfileAccountSection('privacy')"><span class="modern-icon" data-work4it-icon="cloud" aria-hidden="true"></span><span>Data og privatliv</span></button>
+        <button class="profile-account-tab modern-tone-violet" id="profileAccountTabSettings" type="button" role="tab" data-profile-account-tab="settings" aria-controls="profileSectionSettings" aria-selected="false" tabindex="-1" onclick="selectProfileAccountSection('settings')"><span class="modern-icon" data-work4it-icon="settings" aria-hidden="true"></span><span>Tema/Indstillinger</span></button>
+      </nav>
+
       <div class="profile-account-columns">
         <div class="profile-account-column account">
-          <section class="profile-account-section">
+          <section class="profile-account-section" id="profileSectionAccount" data-profile-account-section="account" role="tabpanel" aria-labelledby="profileAccountTabAccount" hidden>
             <h2>Konto & login</h2>
             <p class="profile-section-copy">Din Firebase-session gendannes automatisk på denne enhed.</p>
             <div class="profile-account-status">
@@ -2992,7 +3047,7 @@
             <div class="profile-save-feedback" id="profileAuthFeedback" aria-live="polite"></div>
           </section>
 
-          <section class="profile-account-section">
+          <section class="profile-account-section" id="profileSectionSecurity" data-profile-account-section="security" role="tabpanel" aria-labelledby="profileAccountTabSecurity" hidden>
             <h2>Sikkerhed</h2>
             <p class="profile-section-copy">Skift adgangskoden direkte efter sikker bekræftelse, eller få tilsendt et nulstillingslink.</p>
             <div class="profile-account-actions">
@@ -3002,7 +3057,7 @@
             </div>
           </section>
 
-          <section class="profile-account-section">
+          <section class="profile-account-section" id="profileSectionPrivacy" data-profile-account-section="privacy" role="tabpanel" aria-labelledby="profileAccountTabPrivacy" hidden>
             <h2>Data & privatliv</h2>
             <p class="profile-section-copy">Dine data gemmes i Firebase, når du er logget ind, og localStorage bruges som lokal cache/fallback.</p>
             <div class="profile-account-actions">
@@ -3013,7 +3068,7 @@
             </div>
           </section>
 
-          <section class="profile-account-section" id="themeSettingsSection">
+          <section class="profile-account-section" id="themeSettingsSection" data-profile-account-section="settings" role="tabpanel" aria-labelledby="profileAccountTabSettings" hidden>
             <h2>Indstillinger</h2>
             <p class="profile-section-copy">Vælg appens tema. Valget gemmes i Cloud, når du er logget ind, og lokalt som backup.</p>
             <div class="theme-choice-grid" role="radiogroup" aria-label="Tema">
@@ -3062,7 +3117,7 @@
 
         <div class="profile-account-column training">
           <form id="profileAccountForm" onsubmit="saveProfileAccount(event)">
-        <section class="profile-account-section">
+        <section class="profile-account-section" id="profileSectionPersonal" data-profile-account-section="personal" role="tabpanel" aria-labelledby="profileAccountTabPersonal">
           <h2>Personlige oplysninger</h2>
           <p class="profile-section-copy">Oplysningerne gemmes lokalt og kan senere synkroniseres med Firebase.</p>
           <div class="profile-form-grid">
@@ -3084,7 +3139,7 @@
           </div>
         </section>
 
-        <section class="profile-account-section">
+        <section class="profile-account-section" id="profileSectionTraining" data-profile-account-section="training" role="tabpanel" aria-labelledby="profileAccountTabTraining" hidden>
           <h2>Træningsopsætning</h2>
           <p class="profile-section-copy">Disse valg bruges af programgeneratoren, AI Copilot og fremtidige anbefalinger.</p>
           <div class="profile-form-grid">
@@ -3368,6 +3423,8 @@
     let activeMovementFilter = "Alle";
     let exercisePickerMuscleScope = null;
     let exercisePickerMuscle = "";
+    let blankStrengthCategoryMode = "new";
+    let blankStrengthCategoryFlowActive = false;
 
     const exerciseLibrary = {
       "Bryst": ["Barbell Bench Press","Dumbbell Bench Press","Incline Barbell Bench Press","Incline Dumbbell Press","Machine Chest Press","Push-Up","Weighted Push-Up","Chest Dips","Cable Fly","Dumbbell Fly","Pec Deck","Decline Bench Press","Close-Grip Bench Press","Landmine Press","Svend Press","Assisted Chest Dip","Chest Dip","Chest Press Machine","Decline Barbell Bench Press","Decline Dumbbell Bench Press","Decline Dumbbell Fly","Decline Push-Up","Flat Dumbbell Bench Press","Floor Press","Guillotine Press","Hammer Strength Chest Press","Hex Press","High-to-Low Cable Fly","Incline Dumbbell Bench Press","Incline Dumbbell Fly","Incline Push-Up","Low-to-High Cable Fly","Pec Deck Fly","Plate Press","Ring Push-Up","Single-Arm Cable Press","Smith Machine Bench Press","Squeeze Press","Standing Cable Chest Press","Wide Push-Up","Wide-Grip Bench Press"],
@@ -3775,6 +3832,8 @@
 
     function currentAppView() {
       if (hasActiveWorkoutSession?.() && currentWorkoutView === "session") return "session";
+      if ($("cardioWorkoutView")?.classList.contains("open")) return "cardio-workout";
+      if ($("calisthenicsWorkoutView")?.classList.contains("open")) return "calisthenics-workout";
       if ($("programCreationView")?.classList.contains("open")) return "create-program";
       if ($("savedProgramsView")?.classList.contains("open")) return "saved-programs";
       if ($("profileAccountView")?.classList.contains("open")) return "profile";
@@ -3962,6 +4021,14 @@
       window.location.href = appUrl();
     }
     function goBackSafe() {
+      if ($("cardioWorkoutView")?.classList.contains("open")) {
+        closeCardioWorkoutView();
+        return;
+      }
+      if ($("calisthenicsWorkoutView")?.classList.contains("open")) {
+        closeCalisthenicsWorkoutView();
+        return;
+      }
       if ($("programCreationView")?.classList.contains("open")) {
         closeProgramCreationView();
         return;
@@ -4790,12 +4857,55 @@
       $("modalContent").innerHTML = `
         <p class="helper-text">Vælg hvilken type træningspas du vil oprette.</p>
         <div class="blank-workout-options">
-          <button class="small-btn blank-workout-option modern-tone-blue" data-work4it-leading-icon="training" onclick="closeModal();newWorkout('strength')">Styrketræning</button>
-          <button class="small-btn blank-workout-option modern-tone-violet" data-work4it-leading-icon="calisthenics" onclick="closeModal();newWorkout('calisthenics')">Calisthenics</button>
-          <button class="small-btn blank-workout-option modern-tone-orange" data-work4it-leading-icon="calories" onclick="closeModal();newWorkout('cardio')">Cardio</button>
+          <button class="small-btn blank-workout-option modern-tone-blue" data-work4it-leading-icon="training" onclick="openStrengthWorkoutCategoryDialog()">Styrketræning</button>
+          <button class="small-btn blank-workout-option modern-tone-violet" data-work4it-leading-icon="calisthenics" onclick="openModernCalisthenicsWorkout()">Calisthenics</button>
+          <button class="small-btn blank-workout-option modern-tone-orange" data-work4it-leading-icon="calories" onclick="openModernCardioWorkout()">Cardio</button>
         </div>`;
       window.Work4itIcons?.hydrate?.($("modalContent"));
       openModal();
+    }
+
+    function openStrengthWorkoutCategoryDialog(preserveWorkout = false) {
+      blankStrengthCategoryMode = preserveWorkout ? "existing" : "new";
+      if (preserveWorkout) closeExercisePicker();
+      $("modalTitle").textContent = "Vælg styrkekategori";
+      $("modalContent").innerHTML = `
+        <p class="helper-text">Vælg hvilke styrkeøvelser du vil se.</p>
+        <div class="blank-workout-options">
+          <button class="small-btn blank-workout-option modern-tone-blue" type="button" data-work4it-leading-icon="training" onclick="selectBlankStrengthCategory('Push')">Push</button>
+          <button class="small-btn blank-workout-option modern-tone-violet" type="button" data-work4it-leading-icon="progress" onclick="selectBlankStrengthCategory('Pull')">Pull</button>
+          <button class="small-btn blank-workout-option modern-tone-orange" type="button" data-work4it-leading-icon="target" onclick="selectBlankStrengthCategory('Stabilitet')">Stabilitet</button>
+        </div>
+        <button class="small-btn secondary-btn wide" type="button" onclick="backFromStrengthWorkoutCategory()">← Tilbage</button>`;
+      window.Work4itIcons?.hydrate?.($("modalContent"));
+      openModal();
+    }
+
+    function selectBlankStrengthCategory(category) {
+      if (!["Push", "Pull", "Stabilitet"].includes(category)) return;
+      const preserveWorkout = blankStrengthCategoryMode === "existing";
+      closeModal();
+      if (!preserveWorkout) {
+        newWorkout("strength", category);
+        return;
+      }
+      blankStrengthCategoryFlowActive = true;
+      setExercisePickerContext(category);
+      const muscles = availablePickerMuscles();
+      exercisePickerMuscle = muscles.length === 1 ? muscles[0] : "";
+      renderMuscleMenu();
+      resetExercisePickerScroll();
+      openExercisePickerMenu();
+    }
+
+    function backFromStrengthWorkoutCategory() {
+      if (blankStrengthCategoryMode !== "existing") {
+        openBlankWorkoutDialog();
+        return;
+      }
+      closeModal();
+      renderMuscleMenu();
+      openExercisePickerMenu();
     }
 
     function openCreateOrImportWorkout() {
@@ -4854,6 +4964,7 @@
     }
 
     function inferExercisePickerContext(exercises = []) {
+      blankStrengthCategoryFlowActive = false;
       const muscles = [...new Set((exercises || []).map(exercise => exercise?.muscle).filter(muscle => muscleGroupKeys.includes(muscle)))];
       if (!muscles.length) return setExercisePickerContext("Alle");
       if (exercises.length && exercises.every(exercise => exercise.trainingStyle === "calisthenics")) return setExercisePickerContext("Calisthenics");
@@ -4916,8 +5027,11 @@
       const container = $("muscleMenuItems");
       const title = $("exercisePickerTitle");
       if (!container || !title) return;
+      const categorySwitch = blankStrengthCategoryFlowActive
+        ? '<button class="exercise-picker-category-switch" type="button" onclick="openStrengthWorkoutCategoryDialog(true)">Skift kategori</button>'
+        : "";
       if (!exercisePickerMuscle) {
-        title.textContent = "Vælg muskelgruppe";
+        title.innerHTML = `<div class="exercise-picker-heading"><span>Vælg muskelgruppe</span>${categorySwitch}</div>`;
         container.className = "";
         container.innerHTML = availablePickerMuscles().map(muscle => {
           const meta = muscleGroupMeta(muscle);
@@ -4928,7 +5042,7 @@
       }
 
       const canGoBack = availablePickerMuscles().length > 1;
-      title.innerHTML = `<div class="exercise-picker-heading">${canGoBack ? '<button class="exercise-picker-back" type="button" onclick="showMuscleGroups(event)">←</button>' : ""}<span>${esc(tm(exercisePickerMuscle))}: Vælg øvelse</span></div>`;
+      title.innerHTML = `<div class="exercise-picker-heading">${canGoBack ? '<button class="exercise-picker-back" type="button" onclick="showMuscleGroups(event)">←</button>' : ""}<span>${esc(tm(exercisePickerMuscle))}: Vælg øvelse</span>${categorySwitch}</div>`;
       const exercises = catalog.filter(exercise =>
         exercise.muscle === exercisePickerMuscle &&
         (activeMovementFilter !== "Calisthenics" || exercise.trainingStyle === "calisthenics")
@@ -7526,6 +7640,8 @@
       updateWorkoutButtonVisibility();
     }
     function closeViewsForLoginRouting() {
+      window.closeCardioWorkoutView?.({ restoreScroll: false, persist: false });
+      window.closeCalisthenicsWorkoutView?.({ restoreScroll: false, persist: false });
       window.WorkitWindowManager?.closeNonAuthWindows?.();
       $("programCreationView")?.classList.remove("open");
       $("programCreationView")?.setAttribute("aria-hidden", "true");
@@ -7546,13 +7662,21 @@
       const resume = readAppResumeState();
       const savedView = resume?.view || window.WorkitViewState?.get?.() || "program";
       const restoredAutosave = loadAutosave();
-      const view = ["profile", "membership", "progress", "calorie", "dashboard", "today", "program", "session", "saved-programs", "create-program"].includes(savedView)
+      const view = ["profile", "membership", "progress", "calorie", "dashboard", "today", "program", "session", "saved-programs", "create-program", "calisthenics-workout", "cardio-workout"].includes(savedView)
         ? savedView
         : "program";
 
       if (view === "create-program" && typeof openModernProgramGenerator === "function") {
         openModernProgramGenerator({ restoreScrollState: true });
         return "create-program";
+      }
+      if (view === "calisthenics-workout" && restoredAutosave && typeof openModernCalisthenicsWorkout === "function") {
+        openModernCalisthenicsWorkout({ restoreScrollState: true, initialize: false });
+        return "calisthenics-workout";
+      }
+      if (view === "cardio-workout" && restoredAutosave && typeof openModernCardioWorkout === "function") {
+        openModernCardioWorkout({ restoreScrollState: true, initialize: false });
+        return "cardio-workout";
       }
       if (view === "saved-programs" && typeof openModernSavedPrograms === "function") {
         openModernSavedPrograms({ restoreScrollState: true });
@@ -7617,13 +7741,14 @@
       routeAfterLogin,
       hasActiveWorkout: () => Boolean(activeWorkoutAutosave())
     };
-    function newWorkout(type = "strength") {
+    function newWorkout(type = "strength", strengthCategory = "", options = {}) {
       if (hasActiveWorkoutSession()) {
         alert("Der er allerede en aktiv træning. Genoptag eller afslut den, før du opretter et nyt træningspas.");
         window.Work4itModernDashboard?.closeToolPanel?.();
         return;
       }
       resetWorkoutCanvas(t("ready"));
+      blankStrengthCategoryFlowActive = type === "strength" && ["Push", "Pull", "Stabilitet"].includes(strengthCategory);
       if (type === "cardio") {
         $("workoutTitle").textContent = "Mit nye cardio-pas";
         setExercisePickerContext("Cardio", ["Cardio"]);
@@ -7631,7 +7756,7 @@
         $("workoutTitle").textContent = "Mit nye calisthenics-pas";
         setExercisePickerContext("Calisthenics");
       } else {
-        setExercisePickerContext("Alle");
+        setExercisePickerContext(blankStrengthCategoryFlowActive ? strengthCategory : "Alle");
       }
       openWorkoutEditor();
       renderDashboard();
@@ -7642,7 +7767,7 @@
         renderMuscleMenu();
         openExercisePickerMenu();
       });
-      saveLastActiveView("program");
+      saveLastActiveView(options.view || "program");
     }
 
     function toggleWorkoutTimer() {
@@ -10804,11 +10929,11 @@
   <script src="ai-copilot-actions.js?v=20260713-ai-coach1"></script>
   <script src="help-content-config.js?v=20260628-help1"></script>
   <script src="password-visibility.js?v=20260621-password-toggle1"></script>
-  <script src="auth-gate.js?v=20260726-create-program-view1"></script>
+  <script src="auth-gate.js?v=20260809-profile-tabs1"></script>
   <script src="theme-service.js?v=20260627-theme1"></script>
   <script src="work4it-icons.js?v=20260722-icon-system1"></script>
-  <script src="modern-dashboard-ui.js?v=20260730-create-program-scroll1"></script>
-  <script src="profile-account.js?v=20260721-modern-permanent1"></script>
+  <script src="modern-dashboard-ui.js?v=20260809-profile-tabs1"></script>
+  <script src="profile-account.js?v=20260809-profile-tabs1"></script>
   <script src="profile-wizard.js?v=20260716-cardio-empty-time1"></script>
   <script src="daily-start-wizard.js?v=20260615-window1"></script>
   <script src="wizard-controller.js?v=20260622-fixed-routing1"></script>
@@ -10823,7 +10948,7 @@
   <script>
     if ("serviceWorker" in navigator && window.isSecureContext) {
       window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./service-worker.js?v=20260730-create-program-scroll1").catch(error => {
+        navigator.serviceWorker.register("./service-worker.js?v=20260809-profile-tabs1").catch(error => {
           console.warn("Work4it kunne ikke aktivere offline app-shell.", error);
         });
       });

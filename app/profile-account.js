@@ -3,6 +3,8 @@
 
   const focusAreas = ["Bryst", "Skuldre", "Arme", "Ben", "Core", "Ryg"];
   const bodyHistoryKey = "body_measurement_history";
+  const profileAccountSectionKey = "work4it:profileAccountSection";
+  const profileAccountSections = Object.freeze(["personal", "account", "security", "training", "privacy", "settings"]);
   let profileAutosaveTimer = null;
   function byId(id) {
     return document.getElementById(id);
@@ -382,8 +384,57 @@
     }
   }
 
-  function openProfileAccountView() {
-    window.WorkitViewState?.save?.("profile");
+  function storedProfileAccountSection() {
+    try {
+      const stored = sessionStorage.getItem(profileAccountSectionKey) || localStorage.getItem(profileAccountSectionKey) || "personal";
+      return profileAccountSections.includes(stored) ? stored : "personal";
+    } catch {
+      return "personal";
+    }
+  }
+
+  function selectProfileAccountSection(section = "personal", options = {}) {
+    const selected = profileAccountSections.includes(section) ? section : "personal";
+    document.querySelectorAll("[data-profile-account-section]").forEach(panel => {
+      const active = panel.dataset.profileAccountSection === selected;
+      panel.hidden = !active;
+      panel.classList.toggle("is-active", active);
+      panel.setAttribute("aria-hidden", String(!active));
+    });
+    document.querySelectorAll("[data-profile-account-tab]").forEach(tab => {
+      const active = tab.dataset.profileAccountTab === selected;
+      tab.setAttribute("aria-selected", String(active));
+      tab.tabIndex = active ? 0 : -1;
+    });
+    if (options.persist !== false) {
+      try {
+        sessionStorage.setItem(profileAccountSectionKey, selected);
+        localStorage.setItem(profileAccountSectionKey, selected);
+      } catch {}
+    }
+    window.Work4itIcons?.hydrate?.(byId("profileAccountTabs"));
+    if (options.focus === true) {
+      window.requestAnimationFrame(() => byId(`profileAccountTab${selected[0].toUpperCase()}${selected.slice(1)}`)?.focus?.({ preventScroll: true }));
+    }
+    return selected;
+  }
+
+  function handleProfileAccountTabKey(event) {
+    if (!event || !["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+    const tabs = [...document.querySelectorAll("[data-profile-account-tab]")];
+    if (!tabs.length) return;
+    event.preventDefault();
+    const current = Math.max(0, tabs.indexOf(event.target.closest?.("[data-profile-account-tab]")));
+    const next = event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1
+      : (current + (event.key === "ArrowRight" ? 1 : -1) + tabs.length) % tabs.length;
+    const tab = tabs[next];
+    selectProfileAccountSection(tab.dataset.profileAccountTab);
+    tab.focus();
+  }
+
+  function openProfileAccountView(options = {}) {
+    if (typeof window.saveLastActiveView === "function") window.saveLastActiveView("profile");
+    else window.WorkitViewState?.save?.("profile");
     document.getElementById("progressView")?.classList.remove("open");
     document.getElementById("membershipView")?.classList.remove("open");
     document.getElementById("calorieView")?.classList.remove("open");
@@ -392,12 +443,19 @@
     const view = byId("profileAccountView");
     view?.classList.add("open");
     view?.setAttribute("aria-hidden", "false");
+    selectProfileAccountSection(options.section || storedProfileAccountSection(), { persist: options.persistSection !== false });
+    window.Work4itIcons?.hydrate?.(view);
+    if (options.focusTitle === true) window.requestAnimationFrame(() => byId("profileAccountViewTitle")?.focus?.({ preventScroll: true }));
   }
 
-  function closeProfileAccountView() {
+  function closeProfileAccountView(options = {}) {
     const view = byId("profileAccountView");
     view?.classList.remove("open");
     view?.setAttribute("aria-hidden", "true");
+    if (options.persist !== false) {
+      if (typeof window.saveLastActiveView === "function") window.saveLastActiveView("program");
+      else window.WorkitViewState?.save?.("program");
+    }
   }
 
   function selectedFocusAreas() {
@@ -609,6 +667,8 @@
 
   window.openProfileAccountView = openProfileAccountView;
   window.closeProfileAccountView = closeProfileAccountView;
+  window.selectProfileAccountSection = selectProfileAccountSection;
+  window.handleProfileAccountTabKey = handleProfileAccountTabKey;
   window.saveProfileAccount = saveProfileAccount;
   window.syncProfileGoalOptions = syncProfileGoalOptions;
   window.openProfileWizardAgain = openProfileWizardAgain;

@@ -184,6 +184,11 @@
   function renderCards() {
     const grid = byId("modernCardGrid");
     if (!grid) return;
+    grid.hidden = activeCategory !== "training";
+    if (grid.hidden) {
+      grid.innerHTML = "";
+      return;
+    }
     grid.setAttribute("aria-label", `${CATEGORIES[activeCategory].label}: funktioner`);
     grid.innerHTML = visibleActions().map(action => {
       const state = actionState(action);
@@ -274,6 +279,110 @@
     view.setAttribute("aria-hidden", "true");
     window.WorkitMenuManager?.closePanel?.("count-picker", "program-creation-close");
     if (!options.fromManager) window.WorkitMenuManager?.notifySurfaceClosed?.("program-creation-view");
+    if (options.persist !== false) window.saveLastActiveView?.("program");
+    if (options.restoreScroll !== false) {
+      const returnPosition = Number.isFinite(trainingDashboardScrollPosition)
+        ? trainingDashboardScrollPosition
+        : storedTrainingDashboardScrollPosition();
+      window.requestAnimationFrame(() => window.scrollTo({ top: returnPosition, behavior: "auto" }));
+    }
+    return true;
+  }
+
+  function moveWorkoutEditor(host) {
+    const editor = byId("workoutEditorDetails");
+    if (!host || !editor) return false;
+    host.appendChild(editor);
+    editor.open = true;
+    return true;
+  }
+
+  function restoreWorkoutEditorHome() {
+    const editor = byId("workoutEditorDetails");
+    const home = byId("workoutEditorHome");
+    if (!editor || !home?.parentNode) return false;
+    home.parentNode.insertBefore(editor, home.nextSibling);
+    return true;
+  }
+
+  function openModernCalisthenicsWorkout(options = {}) {
+    const view = byId("calisthenicsWorkoutView");
+    const host = byId("calisthenicsWorkoutEditorHost");
+    const initializeWorkout = options.initialize !== false;
+    if (!view || !host) return false;
+    if (initializeWorkout && window.WorkitWorkoutRouting?.hasActiveWorkout?.()) {
+      window.alert?.("Der er allerede en aktiv træning. Genoptag eller afslut den, før du opretter et nyt træningspas.");
+      return false;
+    }
+    if (!view.classList.contains("open")) {
+      trainingDashboardScrollPosition = options.restoreScrollState === true
+        ? storedTrainingDashboardScrollPosition()
+        : rememberTrainingDashboardScrollPosition();
+    }
+    window.closeModal?.();
+    closeToolPanel();
+    if (!moveWorkoutEditor(host)) return false;
+    view.classList.add("open");
+    view.setAttribute("aria-hidden", "false");
+    view.scrollTop = 0;
+    if (initializeWorkout) window.newWorkout?.("calisthenics", "", { view: "calisthenics-workout" });
+    else window.saveLastActiveView?.("calisthenics-workout");
+    window.Work4itIcons?.hydrate?.(view);
+    window.requestAnimationFrame(() => byId("calisthenicsWorkoutViewTitle")?.focus?.({ preventScroll: true }));
+    return true;
+  }
+
+  function closeCalisthenicsWorkoutView(options = {}) {
+    const view = byId("calisthenicsWorkoutView");
+    if (!view?.classList.contains("open")) return false;
+    window.closeExercisePicker?.();
+    view.classList.remove("open");
+    view.setAttribute("aria-hidden", "true");
+    restoreWorkoutEditorHome();
+    if (options.persist !== false) window.saveLastActiveView?.("program");
+    if (options.restoreScroll !== false) {
+      const returnPosition = Number.isFinite(trainingDashboardScrollPosition)
+        ? trainingDashboardScrollPosition
+        : storedTrainingDashboardScrollPosition();
+      window.requestAnimationFrame(() => window.scrollTo({ top: returnPosition, behavior: "auto" }));
+    }
+    return true;
+  }
+
+  function openModernCardioWorkout(options = {}) {
+    const view = byId("cardioWorkoutView");
+    const host = byId("cardioWorkoutEditorHost");
+    const initializeWorkout = options.initialize !== false;
+    if (!view || !host) return false;
+    if (initializeWorkout && window.WorkitWorkoutRouting?.hasActiveWorkout?.()) {
+      window.alert?.("Der er allerede en aktiv træning. Genoptag eller afslut den, før du opretter et nyt træningspas.");
+      return false;
+    }
+    if (!view.classList.contains("open")) {
+      trainingDashboardScrollPosition = options.restoreScrollState === true
+        ? storedTrainingDashboardScrollPosition()
+        : rememberTrainingDashboardScrollPosition();
+    }
+    window.closeModal?.();
+    closeToolPanel();
+    if (!moveWorkoutEditor(host)) return false;
+    view.classList.add("open");
+    view.setAttribute("aria-hidden", "false");
+    view.scrollTop = 0;
+    if (initializeWorkout) window.newWorkout?.("cardio", "", { view: "cardio-workout" });
+    else window.saveLastActiveView?.("cardio-workout");
+    window.Work4itIcons?.hydrate?.(view);
+    window.requestAnimationFrame(() => byId("cardioWorkoutViewTitle")?.focus?.({ preventScroll: true }));
+    return true;
+  }
+
+  function closeCardioWorkoutView(options = {}) {
+    const view = byId("cardioWorkoutView");
+    if (!view?.classList.contains("open")) return false;
+    window.closeExercisePicker?.();
+    view.classList.remove("open");
+    view.setAttribute("aria-hidden", "true");
+    restoreWorkoutEditorHome();
     if (options.persist !== false) window.saveLastActiveView?.("program");
     if (options.restoreScroll !== false) {
       const returnPosition = Number.isFinite(trainingDashboardScrollPosition)
@@ -380,7 +489,7 @@
 
   function openModernSettings() {
     if (!invokeHandler("openProfileSetup")) return false;
-    window.setTimeout(() => byId("themeSettingsSection")?.scrollIntoView?.({ behavior: "smooth", block: "start" }), 80);
+    window.setTimeout(() => window.selectProfileAccountSection?.("settings", { focus: true }), 80);
     return true;
   }
 
@@ -472,6 +581,10 @@
   window.closeModernToolPanel = closeToolPanel;
   window.openModernProgramGenerator = openModernProgramGenerator;
   window.closeProgramCreationView = closeProgramCreationView;
+  window.openModernCalisthenicsWorkout = openModernCalisthenicsWorkout;
+  window.closeCalisthenicsWorkoutView = closeCalisthenicsWorkoutView;
+  window.openModernCardioWorkout = openModernCardioWorkout;
+  window.closeCardioWorkoutView = closeCardioWorkoutView;
   window.openModernSavedPrograms = openModernSavedPrograms;
   window.openModernSavedProgram = openModernSavedProgram;
   window.closeSavedProgramsView = closeSavedProgramsView;
@@ -485,6 +598,8 @@
     invokeAction,
     closeToolPanel,
     closeProgramCreationView,
+    closeCalisthenicsWorkoutView,
+    closeCardioWorkoutView,
     closeSavedProgramsView,
     render,
     getVisibleActionIds: () => visibleActions().map(action => action.id)

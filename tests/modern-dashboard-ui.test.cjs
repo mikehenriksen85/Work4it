@@ -25,7 +25,12 @@ for (const id of [
   "savedProgramsView", "savedProgramsViewTitle", "savedProgramsViewSelect",
   "savedProgramsViewList", "savedProgramsViewEmpty", "savedProgramsViewCount",
   "programCreationView", "programCreationViewTitle", "programType", "automaticExerciseCount",
-  "countPicker", "cardioGoalPicker", "calisthenicsTemplatePicker"
+  "countPicker", "cardioGoalPicker", "calisthenicsTemplatePicker",
+  "calisthenicsWorkoutView", "calisthenicsWorkoutViewTitle", "calisthenicsWorkoutEditorHost",
+  "cardioWorkoutView", "cardioWorkoutViewTitle", "cardioWorkoutEditorHost",
+  "profileAccountTabs", "profileAccountViewTitle",
+  "profileSectionPersonal", "profileSectionAccount", "profileSectionSecurity",
+  "profileSectionTraining", "profileSectionPrivacy", "themeSettingsSection"
 ]) {
   assert.equal((html.match(new RegExp(`id=["']${id}["']`, "g")) || []).length, 1, `${id} must be unique`);
 }
@@ -49,6 +54,32 @@ for (const handler of [
   "exportDataFromMenu", "openHelpAboutDialog", "logoutProfileAccount", "openModernTrash"
 ]) assert.match(source, new RegExp(handler), `Modern UI reuses ${handler}`);
 
+assert.match(source, /selectProfileAccountSection\?\.\("settings", \{ focus: true \}\)/);
+assert.equal((html.match(/data-profile-account-tab=/g) || []).length, 6, "Profile has exactly six top tabs");
+assert.equal((html.match(/data-profile-account-section=/g) || []).length, 6, "Profile has exactly six content sections");
+for (const [section, label] of [
+  ["personal", "Personlige oplysninger"],
+  ["account", "Konto og login"],
+  ["security", "Sikkerhed"],
+  ["training", "Træningsopsætning"],
+  ["privacy", "Data og privatliv"],
+  ["settings", "Tema/Indstillinger"]
+]) {
+  assert.match(html, new RegExp(`data-profile-account-tab="${section}"[\\s\\S]*?<span>${label.replace("/", "\\/")}</span>`));
+  assert.match(html, new RegExp(`data-profile-account-section="${section}"`));
+}
+assert.match(profile, /const profileAccountSectionKey = "work4it:profileAccountSection"/);
+assert.match(profile, /function selectProfileAccountSection\(section = "personal", options = \{\}\)/);
+assert.match(profile, /panel\.hidden = !active/);
+assert.match(profile, /tab\.setAttribute\("aria-selected", String\(active\)\)/);
+assert.match(profile, /function handleProfileAccountTabKey\(event\)/);
+assert.match(profile, /\["ArrowLeft", "ArrowRight", "Home", "End"\]/);
+assert.match(profile, /selectProfileAccountSection\(options\.section \|\| storedProfileAccountSection\(\)/);
+assert.match(profile, /window\.saveLastActiveView\("profile"\)/);
+assert.match(profile, /function closeProfileAccountView\(options = \{\}\)[\s\S]*?window\.saveLastActiveView\("program"\)/);
+assert.match(css, /\.profile-account-tabs \{[\s\S]*?overflow-x: auto/);
+assert.match(css, /\.profile-account-view \.profile-account-section\[hidden\] \{ display: none !important; \}/);
+
 assert.match(source, /Work4itDashboardRuntime\?\.getSnapshot/);
 assert.doesNotMatch(source, /FirestoreDataService|FirebaseAuthService|\bfetch\(|XMLHttpRequest/, "Modern UI does not introduce a competing data flow");
 assert.match(source, /Forbereder dit dashboard/);
@@ -59,6 +90,9 @@ assert.match(source, /actions\.filter\(action => !action\.activeOnly \|\| hasAct
 assert.match(source, /return active \? \[active, \.\.\.visible\.filter\(action => action\.id !== "active"\)\] : visible/);
 assert.match(source, /rail\.hidden = activeCategory === "training"/);
 assert.match(source, /panel\.hidden = activeCategory === "training"/);
+assert.match(source, /grid\.hidden = activeCategory !== "training"/);
+assert.match(source, /if \(grid\.hidden\) \{\s*grid\.innerHTML = "";\s*return;/);
+assert.match(css, /\.modern-card-grid\[hidden\] \{ display: none !important; \}/);
 assert.doesNotMatch(html, /Hurtig adgang|modernShortcutsTitle|modern-shortcuts/);
 assert.match(source, /\{ id: "today"[\s\S]*?\{ id: "saved"[\s\S]*?\{ id: "generator"/);
 assert.match(source, /function openModernSavedPrograms\(/);
@@ -80,7 +114,7 @@ assert.match(html, />Vælg et gemt træningspas</);
 assert.match(html, />Gemte programmer</);
 assert.match(source, />Åbn og redigér</);
 assert.match(html, /savedProgramsView[\s\S]*?tabindex="-1"/);
-assert.match(html, /\["profile", "membership", "progress", "calorie", "dashboard", "today", "program", "session", "saved-programs", "create-program"\]/);
+assert.match(html, /\["profile", "membership", "progress", "calorie", "dashboard", "today", "program", "session", "saved-programs", "create-program", "calisthenics-workout", "cardio-workout"\]/);
 assert.match(html, /view === "saved-programs"[\s\S]*?openModernSavedPrograms/);
 assert.match(authGate, /"saved-programs"/);
 assert.match(menuManager, /\.saved-programs-view\.open/);
@@ -97,6 +131,29 @@ assert.match(html, /view === "create-program"[\s\S]*?openModernProgramGenerator\
 assert.match(html, /closeProgramCreationView\?\.\(\{ restoreScroll: false, persist: false \}\)/);
 assert.match(authGate, /"create-program"/);
 assert.match(menuManager, /\.program-creation-view\.open/);
+assert.match(source, /function openModernCalisthenicsWorkout\(options = \{\}\)/);
+assert.match(source, /function closeCalisthenicsWorkoutView\(options = \{\}\)/);
+assert.match(source, /restoreWorkoutEditorHome\(\)/);
+const calisthenicsViewHandler = source.match(/function openModernCalisthenicsWorkout\(options = \{\}\) \{([\s\S]*?)\n  \}/)?.[1] || "";
+assert.doesNotMatch(calisthenicsViewHandler, /openSurface|openPanel/, "Calisthenics view must remain open while the exercise picker uses the transient menu manager");
+assert.match(html, /class="calisthenics-workout-view"/);
+assert.match(html, /id="calisthenicsWorkoutViewTitle" tabindex="-1"/);
+assert.match(html, /id="calisthenicsWorkoutEditorHost"/);
+assert.match(html, /id="workoutEditorHome" hidden/);
+assert.match(html, /view === "calisthenics-workout"[\s\S]*?initialize: false/);
+assert.match(authGate, /"calisthenics-workout"/);
+assert.match(menuManager, /\.calisthenics-workout-view\.open/);
+assert.match(source, /function openModernCardioWorkout\(options = \{\}\)/);
+assert.match(source, /function closeCardioWorkoutView\(options = \{\}\)/);
+const cardioViewHandler = source.match(/function openModernCardioWorkout\(options = \{\}\) \{([\s\S]*?)\n  \}/)?.[1] || "";
+assert.doesNotMatch(cardioViewHandler, /openSurface|openPanel/, "Cardio view must remain open while the exercise picker uses the transient menu manager");
+assert.match(html, /class="cardio-workout-view"/);
+assert.match(html, /id="cardioWorkoutViewTitle" tabindex="-1"/);
+assert.match(html, /id="cardioWorkoutEditorHost"/);
+assert.match(html, /view === "cardio-workout"[\s\S]*?initialize: false/);
+assert.match(source, /window\.newWorkout\?\.\("cardio", "", \{ view: "cardio-workout" \}\)/);
+assert.match(authGate, /"cardio-workout"/);
+assert.match(menuManager, /\.cardio-workout-view\.open/);
 assert.match(source, /function openModernTrash\(/);
 assert.match(source, /\["ArrowLeft", "ArrowRight", "Home", "End"\]/, "Horizontal tabs support keyboard navigation");
 assert.match(source, /class="modern-mini-card/);
@@ -150,21 +207,21 @@ assert.match(css, /@media \(min-width: 760px\)/);
 assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
 
 for (const asset of ["modern-dashboard-ui.css", "modern-dashboard-ui.js"])
-  assert.match(html, new RegExp(`${asset.replace(".", "\\.")}\\?v=20260730-create-program-scroll1`));
+  assert.match(html, new RegExp(`${asset.replace(".", "\\.")}\\?v=20260809-profile-tabs1`));
 assert.match(html, /work4it-icons\.js\?v=20260722-icon-system1/);
-for (const asset of ["profile-account.js", "membership.js"])
-  assert.match(html, new RegExp(`${asset.replace(".", "\\.")}\\?v=20260721-modern-permanent1`));
-assert.match(html, /workit-menu-manager\.js\?v=20260726-create-program-view1/);
-assert.match(html, /auth-gate\.js\?v=20260726-create-program-view1/);
-assert.match(html, /service-worker\.js\?v=20260730-create-program-scroll1/);
-assert.match(serviceWorker, /work4it-shell-v136-create-program-scroll1/);
+assert.match(html, /profile-account\.js\?v=20260809-profile-tabs1/);
+assert.match(html, /membership\.js\?v=20260721-modern-permanent1/);
+assert.match(html, /workit-menu-manager\.js\?v=20260809-profile-tabs1/);
+assert.match(html, /auth-gate\.js\?v=20260809-profile-tabs1/);
+assert.match(html, /service-worker\.js\?v=20260809-profile-tabs1/);
+assert.match(serviceWorker, /work4it-shell-v141-profile-tabs1/);
 for (const asset of ["modern-dashboard-ui.css", "modern-dashboard-ui.js"])
-  assert.match(serviceWorker, new RegExp(`${asset.replace(".", "\\.")}\\?v=20260730-create-program-scroll1`));
+  assert.match(serviceWorker, new RegExp(`${asset.replace(".", "\\.")}\\?v=20260809-profile-tabs1`));
 assert.match(serviceWorker, /work4it-icons\.js\?v=20260722-icon-system1/);
-for (const asset of ["profile-account.js", "membership.js"])
-  assert.match(serviceWorker, new RegExp(`${asset.replace(".", "\\.")}\\?v=20260721-modern-permanent1`));
-assert.match(serviceWorker, /workit-menu-manager\.js\?v=20260726-create-program-view1/);
-assert.match(serviceWorker, /auth-gate\.js\?v=20260726-create-program-view1/);
+assert.match(serviceWorker, /profile-account\.js\?v=20260809-profile-tabs1/);
+assert.match(serviceWorker, /membership\.js\?v=20260721-modern-permanent1/);
+assert.match(serviceWorker, /workit-menu-manager\.js\?v=20260809-profile-tabs1/);
+assert.match(serviceWorker, /auth-gate\.js\?v=20260809-profile-tabs1/);
 
 const listeners = new Map();
 const window = {
@@ -185,6 +242,8 @@ assert.equal(typeof window.openModernProgramGenerator, "function");
 assert.equal(typeof window.closeProgramCreationView, "function");
 assert.equal(typeof window.openModernSavedPrograms, "function");
 assert.equal(typeof window.closeSavedProgramsView, "function");
+assert.equal(typeof window.openModernCardioWorkout, "function");
+assert.equal(typeof window.closeCardioWorkoutView, "function");
 assert.deepEqual(
   [...window.Work4itModernDashboard.getVisibleActionIds().slice(0, 3)],
   ["today", "saved", "generator"],

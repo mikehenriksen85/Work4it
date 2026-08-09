@@ -63,10 +63,53 @@ function createStore({ user = { uid: "uid-1" }, cloudSave = async () => true } =
   assert.match(profileSource, /\[Work4it profil\] Cloud-gemning mislykkedes/);
   assert.match(profileSource, /users\/\$\{window\.FirebaseAuthService/);
   assert.match(html, /wizard-store\.js\?v=20260718-profile-cloud1/);
-  assert.match(html, /profile-account\.js\?v=20260721-modern-permanent1/);
+  assert.match(html, /profile-account\.js\?v=20260809-profile-tabs1/);
   assert.match(html, /firestore-cloud-service\.js\?v=20260726-permission-retry1/);
-  assert.match(html, /service-worker\.js\?v=20260730-create-program-scroll1/);
-  assert.match(serviceWorker, /work4it-shell-v136-create-program-scroll1/);
+  assert.match(html, /service-worker\.js\?v=20260809-profile-tabs1/);
+  assert.match(serviceWorker, /work4it-shell-v141-profile-tabs1/);
+
+  const profileSections = ["personal", "account", "security", "training", "privacy", "settings"];
+  const panels = profileSections.map(section => ({
+    dataset: { profileAccountSection: section }, hidden: false, attributes: {},
+    classList: { toggle() {} }, setAttribute(name, value) { this.attributes[name] = String(value); }
+  }));
+  const tabs = profileSections.map(section => ({
+    dataset: { profileAccountTab: section }, tabIndex: -1, attributes: {}, focused: false,
+    setAttribute(name, value) { this.attributes[name] = String(value); },
+    focus() { this.focused = true; }, closest() { return this; }
+  }));
+  const sectionStorage = new Map();
+  const sectionStorageApi = {
+    getItem: key => sectionStorage.get(key) ?? null,
+    setItem: (key, value) => sectionStorage.set(key, String(value))
+  };
+  const profileUiWindow = {
+    addEventListener() {}, clearTimeout() {}, setTimeout() {}, requestAnimationFrame(callback) { callback(); },
+    Work4itIcons: { hydrate() {} }
+  };
+  const profileUiDocument = {
+    getElementById: () => null,
+    querySelectorAll(selector) {
+      if (selector === "[data-profile-account-section]") return panels;
+      if (selector === "[data-profile-account-tab]") return tabs;
+      return [];
+    }
+  };
+  const profileUiSandbox = {
+    window: profileUiWindow, document: profileUiDocument,
+    localStorage: sectionStorageApi, sessionStorage: sectionStorageApi,
+    console, URL, Blob, Date
+  };
+  vm.createContext(profileUiSandbox);
+  vm.runInContext(profileSource, profileUiSandbox);
+  assert.equal(profileUiWindow.selectProfileAccountSection("security"), "security");
+  assert.equal(panels.find(panel => panel.dataset.profileAccountSection === "security").hidden, false);
+  assert.equal(panels.filter(panel => !panel.hidden).length, 1, "only the selected profile section is visible");
+  assert.equal(tabs.find(tab => tab.dataset.profileAccountTab === "security").attributes["aria-selected"], "true");
+  assert.equal(sectionStorage.get("work4it:profileAccountSection"), "security", "selected profile section persists for resume");
+  profileUiWindow.handleProfileAccountTabKey({ key: "ArrowRight", target: tabs[2], preventDefault() {} });
+  assert.equal(panels.find(panel => panel.dataset.profileAccountSection === "training").hidden, false, "keyboard navigation selects the next section");
+  assert.equal(tabs[3].focused, true);
 
   console.log("Profile local-first and confirmed Cloud-save scenarios passed");
 })().catch(error => {

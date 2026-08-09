@@ -110,7 +110,8 @@ body {
 
 .modern-icon-rail::-webkit-scrollbar { display: none; }
 .modern-icon-rail[hidden],
-.modern-feature-card[hidden] { display: none !important; }
+.modern-feature-card[hidden],
+.modern-card-grid[hidden] { display: none !important; }
 
 .work4it-icon-svg {
   width: 1em;
@@ -398,6 +399,77 @@ body {
 
 .program-creation-view.open { display: block; }
 
+.calisthenics-workout-view,
+.cardio-workout-view {
+  position: fixed;
+  inset: calc(60px + env(safe-area-inset-top, 0px)) 0 0;
+  z-index: 1400;
+  display: none;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: clamp(14px, 3vw, 28px);
+  padding-bottom: calc(32px + env(safe-area-inset-bottom, 0px));
+  background: var(--bg);
+  -webkit-overflow-scrolling: touch;
+}
+
+.calisthenics-workout-view.open,
+.cardio-workout-view.open { display: block; }
+
+.calisthenics-workout-view-shell,
+.cardio-workout-view-shell {
+  width: min(980px, 100%);
+  min-height: 100%;
+  display: grid;
+  align-content: start;
+  gap: var(--modern-space-3);
+  margin: 0 auto;
+}
+
+.calisthenics-workout-view-head,
+.cardio-workout-view-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--modern-space-3);
+  padding-bottom: var(--modern-space-2);
+  border-bottom: 1px solid var(--border);
+}
+
+.calisthenics-workout-view-head h1,
+.cardio-workout-view-head h1 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: clamp(1.5rem, 5vw, 2rem);
+  line-height: 1.15;
+}
+
+.calisthenics-workout-eyebrow,
+.cardio-workout-eyebrow {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--text-secondary);
+  font-size: var(--font-size-small);
+}
+
+.calisthenics-workout-back,
+.cardio-workout-back {
+  min-height: var(--modern-touch);
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--modern-radius-sm);
+  background: var(--input);
+  color: var(--text-primary);
+  cursor: pointer;
+  font: inherit;
+  font-weight: var(--font-weight-semibold);
+}
+
+.calisthenics-workout-editor-host .workout-editor-details,
+.cardio-workout-editor-host .workout-editor-details { margin: 0; }
+.calisthenics-workout-editor-host .workout-editor-details > summary,
+.cardio-workout-editor-host .workout-editor-details > summary { display: none; }
+
 .program-creation-view-shell {
   width: min(760px, 100%);
   min-height: 100%;
@@ -611,7 +683,141 @@ body {
 .saved-programs-empty p { max-width: 520px; color: var(--text-secondary); line-height: 1.5; }
 .saved-programs-empty-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--modern-space-2); }
 
+.profile-account-view .profile-account-shell {
+  width: min(980px, 100%);
+  display: grid;
+  align-content: start;
+  gap: var(--modern-space-3);
+}
+
+.profile-account-view .profile-account-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  justify-content: initial;
+  gap: var(--modern-space-3);
+  margin: 0;
+  padding-bottom: var(--modern-space-2);
+  border-bottom: 1px solid var(--border);
+}
+
+.profile-account-view .profile-account-title-group {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--modern-space-2);
+}
+
+.profile-account-view .profile-account-logo {
+  width: 54px;
+  height: 42px;
+  object-fit: contain;
+}
+
+.profile-account-view .profile-account-back {
+  min-height: var(--modern-touch);
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--modern-radius-sm);
+  background: var(--input);
+  color: var(--text-primary);
+  cursor: pointer;
+  font: inherit;
+  font-weight: var(--font-weight-semibold);
+}
+
+.profile-account-view .profile-account-intro { margin: 0; }
+
+.profile-account-tabs {
+  position: sticky;
+  z-index: 3;
+  top: 0;
+  max-width: 100%;
+  display: flex;
+  gap: 8px;
+  padding: 7px;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scrollbar-width: none;
+  border: 1px solid var(--border);
+  border-radius: var(--modern-radius-lg);
+  background: color-mix(in srgb, var(--card), transparent 3%);
+  box-shadow: var(--shadow-soft);
+  scroll-snap-type: x proximity;
+}
+
+.profile-account-tabs::-webkit-scrollbar { display: none; }
+
+.profile-account-tab {
+  flex: 0 0 auto;
+  min-width: 128px;
+  min-height: 82px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 6px;
+  padding: 9px 10px;
+  scroll-snap-align: start;
+  border: 1px solid transparent;
+  border-radius: var(--modern-radius-md);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  font-weight: var(--font-weight-semibold);
+  line-height: 1.25;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.profile-account-tab .modern-icon {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--modern-icon-color, var(--blue)), transparent 84%);
+  color: var(--modern-icon-color, var(--text-accent));
+  font-size: 1.35rem;
+}
+
+.profile-account-tab[aria-selected="true"] {
+  border-color: color-mix(in srgb, var(--modern-icon-color, var(--blue)), transparent 38%);
+  background: color-mix(in srgb, var(--modern-icon-color, var(--blue)), transparent 84%);
+  color: var(--text-primary);
+}
+
+.profile-account-view .profile-account-columns { display: block; }
+.profile-account-view .profile-account-column { display: contents; }
+.profile-account-view .profile-account-column.account { padding: 0; border: 0; }
+.profile-account-view #profileAccountForm { display: contents; }
+
+.profile-account-view .profile-account-section {
+  margin: 0;
+  padding: clamp(16px, 4vw, 24px);
+  border: 1px solid var(--border);
+  border-radius: var(--modern-radius-lg);
+  background: var(--card);
+  box-shadow: var(--shadow-soft);
+}
+
+.profile-account-view .profile-account-section[hidden] { display: none !important; }
+.profile-account-view .profile-account-section.is-active { animation: profile-account-section-in 180ms ease-out; }
+.profile-account-view .profile-account-section h2 { font-size: clamp(1.2rem, 4vw, 1.55rem); }
+
+@keyframes profile-account-section-in {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 @media (max-width: 560px) {
+  .calisthenics-workout-view,
+  .cardio-workout-view { padding: 12px; padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }
+  .calisthenics-workout-view-head,
+  .cardio-workout-view-head { gap: 10px; }
+  .calisthenics-workout-back,
+  .cardio-workout-back { padding-inline: 12px; }
   .program-creation-view { padding: 12px; padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }
   .program-creation-view-head { gap: 10px; }
   .program-creation-back { padding-inline: 12px; }
@@ -623,6 +829,13 @@ body {
   .saved-program-open { grid-column: 1 / -1; width: 100%; }
   .saved-programs-empty-actions,
   .saved-programs-empty-actions > * { width: 100%; }
+  .profile-account-view .profile-account-head { gap: 10px; }
+  .profile-account-view .profile-account-title-group { gap: 8px; }
+  .profile-account-view .profile-account-logo { display: none; }
+  .profile-account-view .profile-account-back { padding-inline: 12px; }
+  .profile-account-tabs { gap: 6px; padding: 6px; }
+  .profile-account-tab { min-width: 122px; min-height: 76px; font-size: 10.5px; }
+  .profile-account-view .profile-account-section { padding: 14px; }
 }
 
 .workout-editor-details {
@@ -691,6 +904,8 @@ body {
 .modern-bottom-tab[aria-current="page"] .modern-icon { color: var(--modern-icon-color); }
 
 .modern-icon-tab:focus-visible,
+.profile-account-tab:focus-visible,
+.profile-account-back:focus-visible,
 .modern-feature-open:focus-visible,
 .modern-mini-card:focus-visible,
 .modern-bottom-tab:focus-visible,

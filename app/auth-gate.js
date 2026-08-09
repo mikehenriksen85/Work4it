@@ -18,7 +18,9 @@
     "calorie",
     "dashboard",
     "saved-programs",
-    "create-program"
+    "create-program",
+    "calisthenics-workout",
+    "cardio-workout"
   ]);
   let appReady = false;
   let cloudReady = false;
@@ -43,7 +45,7 @@
     document.getElementById("membershipPopup")?.classList.remove("open");
     const modal = byId("modal");
     if (modal) modal.style.display = "none";
-    ["progressView", "profileAccountView", "membershipView", "calorieView", "savedProgramsView", "programCreationView"].forEach(id => {
+    ["progressView", "profileAccountView", "membershipView", "calorieView", "savedProgramsView", "programCreationView", "calisthenicsWorkoutView", "cardioWorkoutView"].forEach(id => {
       byId(id)?.classList.remove("open");
     });
     const exerciseMenu = byId("muscleMenu");
@@ -62,7 +64,9 @@
       ["progress-view", byId("progressView")],
       ["calorie-view", byId("calorieView")],
       ["saved-programs-view", byId("savedProgramsView")],
-      ["program-creation-view", byId("programCreationView")]
+      ["program-creation-view", byId("programCreationView")],
+      ["calisthenics-workout-view", byId("calisthenicsWorkoutView")],
+      ["cardio-workout-view", byId("cardioWorkoutView")]
     ];
     return candidates.find(([name, element]) => name !== except && isVisible(element))?.[0] || "";
   }

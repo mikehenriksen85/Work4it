@@ -29,6 +29,13 @@ for (const id of [
   "elapsedTimeMetric",
   "programSecondaryActions",
   "workoutEditorDetails",
+  "workoutEditorHome",
+  "calisthenicsWorkoutView",
+  "calisthenicsWorkoutViewTitle",
+  "calisthenicsWorkoutEditorHost",
+  "cardioWorkoutView",
+  "cardioWorkoutViewTitle",
+  "cardioWorkoutEditorHost",
   "aiCoachPanel"
 ]) {
   assert.equal((html.match(new RegExp(`id=["']${id}["']`, "g")) || []).length, 1, `${id} must be unique`);
@@ -38,7 +45,9 @@ for (const handler of [
   "openProfileSetup", "openMembershipView", "openProfileWizardFromMenu",
   "openBlankWorkoutDialog", "openScreenshotImportInfo", "openDashboard", "openCalorieView",
   "openProgressView", "openAiCoach", "exportDataFromMenu", "openHelpAboutDialog",
-  "logoutProfileAccount", "startDashboardWorkout", "continueDashboardWorkout"
+  "logoutProfileAccount", "startDashboardWorkout", "continueDashboardWorkout",
+  "openModernCalisthenicsWorkout", "closeCalisthenicsWorkoutView",
+  "openModernCardioWorkout", "closeCardioWorkoutView"
 ]) {
   assert.match(`${html}\n${modernDashboard}`, new RegExp(handler), `${handler} must remain wired`);
 }
@@ -56,7 +65,7 @@ assert.match(html, /function updateLiveTrainingVisibility\(/);
 assert.match(html, /const isActive = hasActiveWorkoutSession\(\)/);
 assert.match(html, /document\.body\.dataset\.liveTraining = String\(isActive\)/);
 assert.match(html, /function hasActiveWorkoutSession\(\) \{\s+return isActiveWorkoutSession\(activeWorkoutSession\)/);
-assert.match(html, /service-worker\.js\?v=20260730-create-program-scroll1/);
+assert.match(html, /service-worker\.js\?v=20260809-profile-tabs1/);
 assert.doesNotMatch(html, /Hurtig adgang|modernShortcutsTitle|modern-shortcuts/);
 assert.match(html, /id="modernCardGrid" aria-label="Træning: funktioner"/);
 assert.match(html, /dashboard-view-model\.js\?v=20260718-dashboard-buttons1/);
@@ -86,7 +95,34 @@ assert.match(html, /id="saveWorkoutButton"[^>]*onclick="saveCanvasState\(\)"/);
 assert.match(html, /function saveCanvasState\(\) \{\s+if \(!updateWorkoutEditorActionState\(\)\) return false;/);
 assert.match(html, /function openCreateOrImportWorkout\(/);
 assert.match(html, /class="blank-workout-options"/);
-assert.equal((html.match(/class="small-btn blank-workout-option/g) || []).length, 3);
+assert.equal((html.match(/class="small-btn blank-workout-option/g) || []).length, 6);
+assert.match(html, /data-work4it-leading-icon="training" onclick="openStrengthWorkoutCategoryDialog\(\)"/);
+assert.match(html, /function openStrengthWorkoutCategoryDialog\(preserveWorkout = false\)/);
+for (const category of ["Push", "Pull", "Stabilitet"]) {
+  assert.match(html, new RegExp(`onclick="selectBlankStrengthCategory\\('${category}'\\)"`));
+}
+assert.match(html, /function selectBlankStrengthCategory\(category\)[\s\S]*?newWorkout\("strength", category\)/);
+assert.match(html, /blankStrengthCategoryMode === "existing"/);
+assert.match(html, /setExercisePickerContext\(category\)/);
+assert.match(html, /onclick="openStrengthWorkoutCategoryDialog\(true\)">Skift kategori<\/button>/);
+assert.match(html, /function newWorkout\(type = "strength", strengthCategory = "", options = \{\}\)/);
+assert.match(html, /setExercisePickerContext\(blankStrengthCategoryFlowActive \? strengthCategory : "Alle"\)/);
+assert.match(html, /data-work4it-leading-icon="calisthenics" onclick="openModernCalisthenicsWorkout\(\)"/);
+assert.match(html, /class="calisthenics-workout-view"/);
+assert.match(html, /id="calisthenicsWorkoutEditorHost"/);
+assert.match(html, /view === "calisthenics-workout"[\s\S]*?openModernCalisthenicsWorkout\(\{ restoreScrollState: true, initialize: false \}\)/);
+assert.match(modernDashboard, /function moveWorkoutEditor\(host\)/);
+assert.match(modernDashboard, /host\.appendChild\(editor\)/);
+assert.match(modernDashboard, /function restoreWorkoutEditorHome\(\)/);
+assert.match(modernDashboard, /home\.parentNode\.insertBefore\(editor, home\.nextSibling\)/);
+assert.match(modernDashboard, /window\.newWorkout\?\.\("calisthenics", "", \{ view: "calisthenics-workout" \}\)/);
+assert.match(html, /data-work4it-leading-icon="calories" onclick="openModernCardioWorkout\(\)"/);
+assert.match(html, /class="cardio-workout-view"/);
+assert.match(html, /id="cardioWorkoutEditorHost"/);
+assert.match(html, /view === "cardio-workout"[\s\S]*?openModernCardioWorkout\(\{ restoreScrollState: true, initialize: false \}\)/);
+assert.match(modernDashboard, /function openModernCardioWorkout\(options = \{\}\)/);
+assert.match(modernDashboard, /function closeCardioWorkoutView\(options = \{\}\)/);
+assert.match(modernDashboard, /window\.newWorkout\?\.\("cardio", "", \{ view: "cardio-workout" \}\)/);
 assert.match(html, /\.blank-workout-option \{[\s\S]*?white-space: nowrap;[\s\S]*?overflow-wrap: normal;[\s\S]*?word-break: keep-all;[\s\S]*?hyphens: none;/);
 assert.match(html, /@media \(max-width: 560px\)[\s\S]*?\.blank-workout-options \{ grid-template-columns: 1fr; \}/);
 assert.match(html, /firestore:fallback-active[\s\S]*?dashboardCloudPending = false;[\s\S]*?renderSaved\(\)/);
