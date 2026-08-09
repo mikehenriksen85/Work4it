@@ -45,7 +45,7 @@ for (const handler of [
   "openProfileSetup", "openMembershipView", "openProfileWizardFromMenu",
   "openBlankWorkoutDialog", "openScreenshotImportInfo", "openDashboard", "openCalorieView",
   "openProgressView", "openAiCoach", "exportDataFromMenu", "openHelpAboutDialog",
-  "logoutProfileAccount", "startDashboardWorkout", "continueDashboardWorkout",
+  "logoutProfileAccount", "openDashboardTodayWorkout", "startDashboardWorkout", "continueDashboardWorkout",
   "openModernCalisthenicsWorkout", "closeCalisthenicsWorkoutView",
   "openModernCardioWorkout", "closeCardioWorkoutView"
 ]) {
@@ -56,7 +56,42 @@ assert.match(html, /function modernDashboardSnapshot\(/);
 assert.match(html, /window\.Work4itDashboardRuntime = Object\.freeze/);
 assert.match(html, /function renderDashboard\(/);
 assert.match(html, /work4it:dashboard-updated/);
-assert.match(html, /function startDashboardWorkout\([\s\S]*?modernDashboardSnapshot\(\)\.view\?\.featuredWorkout/);
+assert.match(html, /function openDashboardTodayWorkout\([\s\S]*?modernDashboardSnapshot\(\)\.view\?\.featuredWorkout/);
+const openTodayBody = html.match(/function openDashboardTodayWorkout\(\) \{([\s\S]*?)\n    \}/)?.[1] || "";
+assert.match(openTodayBody, /hasActiveWorkoutSession\(\)[\s\S]*?showTrainingSession\(\)/);
+assert.match(openTodayBody, /loadSavedProgram\(programId\)/);
+assert.match(openTodayBody, /openWorkoutEditor\(\)/);
+assert.match(openTodayBody, /saveLastActiveView\("today"\)/);
+assert.doesNotMatch(openTodayBody, /toggleWorkoutTimer|beginWorkoutSession|startWorkoutTimerInterval|clearPauseTimers/);
+const runOpenTodayScenario = active => {
+  const calls = { show: 0, load: 0, open: 0, save: 0 };
+  const run = new Function(
+    "hasActiveWorkoutSession", "showTrainingSession", "modernDashboardSnapshot", "window",
+    "currentSavedProgramId", "slotIds", "loadSavedProgram", "validCanvasExerciseCount",
+    "updateStartTrainingAvailability", "openWorkoutEditor", "saveLastActiveView",
+    openTodayBody
+  );
+  const result = run(
+    () => active,
+    () => { calls.show += 1; return true; },
+    () => ({ view: { featuredWorkout: { id: "program-1" } } }),
+    { Work4itDashboardRuntime: { canStartProgram: () => true } },
+    "", () => [], () => { calls.load += 1; }, () => 2, () => false,
+    () => { calls.open += 1; }, () => { calls.save += 1; }
+  );
+  return { calls, result };
+};
+const unopenedToday = runOpenTodayScenario(false);
+assert.deepEqual(unopenedToday.calls, { show: 0, load: 1, open: 1, save: 1 }, "opening a program must not create or resume a session");
+assert.equal(unopenedToday.result, true);
+const activeToday = runOpenTodayScenario(true);
+assert.deepEqual(activeToday.calls, { show: 1, load: 0, open: 0, save: 0 }, "an existing active session must be resumed unchanged");
+assert.match(html, /function startDashboardWorkout\(\) \{\s+return openDashboardTodayWorkout\(\);/);
+const continueTodayBody = html.match(/function continueDailyWorkout\(\) \{([\s\S]*?)\n    \}/)?.[1] || "";
+assert.match(continueTodayBody, /hasActiveWorkoutSession\(\)[\s\S]*?showTrainingSession\(\)/);
+assert.match(continueTodayBody, /openWorkoutEditor\(\)/);
+assert.match(continueTodayBody, /saveLastActiveView\("today"\)/);
+assert.doesNotMatch(continueTodayBody, /toggleWorkoutTimer|beginWorkoutSession|startWorkoutTimerInterval|clearPauseTimers/);
 assert.match(html, /function continueDashboardWorkout\([\s\S]*?showTrainingSession\(\)/);
 assert.match(html, /function presentGeneratedWorkout\(\) \{[\s\S]*?closeToolPanel[\s\S]*?renderDashboard\(\)[\s\S]*?openWorkoutEditor\(\)/);
 assert.equal((html.match(/presentGeneratedWorkout\(\);/g) || []).length, 3);
@@ -65,7 +100,7 @@ assert.match(html, /function updateLiveTrainingVisibility\(/);
 assert.match(html, /const isActive = hasActiveWorkoutSession\(\)/);
 assert.match(html, /document\.body\.dataset\.liveTraining = String\(isActive\)/);
 assert.match(html, /function hasActiveWorkoutSession\(\) \{\s+return isActiveWorkoutSession\(activeWorkoutSession\)/);
-assert.match(html, /service-worker\.js\?v=20260809-profile-tabs1/);
+assert.match(html, /service-worker\.js\?v=20260809-inline-navigation1/);
 assert.doesNotMatch(html, /Hurtig adgang|modernShortcutsTitle|modern-shortcuts/);
 assert.match(html, /id="modernCardGrid" aria-label="Træning: funktioner"/);
 assert.match(html, /dashboard-view-model\.js\?v=20260718-dashboard-buttons1/);
@@ -95,18 +130,46 @@ assert.match(html, /id="saveWorkoutButton"[^>]*onclick="saveCanvasState\(\)"/);
 assert.match(html, /function saveCanvasState\(\) \{\s+if \(!updateWorkoutEditorActionState\(\)\) return false;/);
 assert.match(html, /function openCreateOrImportWorkout\(/);
 assert.match(html, /class="blank-workout-options"/);
-assert.equal((html.match(/class="small-btn blank-workout-option/g) || []).length, 6);
+assert.equal((html.match(/class="small-btn blank-workout-option/g) || []).length, 7);
 assert.match(html, /data-work4it-leading-icon="training" onclick="openStrengthWorkoutCategoryDialog\(\)"/);
 assert.match(html, /function openStrengthWorkoutCategoryDialog\(preserveWorkout = false\)/);
-for (const category of ["Push", "Pull", "Stabilitet"]) {
+for (const category of ["Alle", "Push", "Pull", "Stabilitet"]) {
   assert.match(html, new RegExp(`onclick="selectBlankStrengthCategory\\('${category}'\\)"`));
 }
 assert.match(html, /function selectBlankStrengthCategory\(category\)[\s\S]*?newWorkout\("strength", category\)/);
 assert.match(html, /blankStrengthCategoryMode === "existing"/);
-assert.match(html, /setExercisePickerContext\(category\)/);
+assert.match(html, /setStrengthExercisePickerContext\(category\)/);
 assert.match(html, /onclick="openStrengthWorkoutCategoryDialog\(true\)">Skift kategori<\/button>/);
 assert.match(html, /function newWorkout\(type = "strength", strengthCategory = "", options = \{\}\)/);
-assert.match(html, /setExercisePickerContext\(blankStrengthCategoryFlowActive \? strengthCategory : "Alle"\)/);
+assert.match(html, /blankStrengthCategoryFlowActive\) setStrengthExercisePickerContext\(strengthCategory\)/);
+assert.match(html, /function strengthCategoryMuscles\(category\)/);
+assert.match(html, /category === "Alle" \? \["Push", "Pull"\] : \[category\]/);
+assert.match(html, /function uniqueExercisesForMuscles\(exercises, muscles\)/);
+assert.match(html, /blankStrengthCategoryFlowActive && activeMovementFilter === "Alle"[\s\S]*?uniqueExercisesForMuscles/);
+assert.match(html, /\.blank-workout-options\.strength-category-options \{[\s\S]*?repeat\(4, minmax\(0, 1fr\)\)/);
+assert.match(html, /@media \(max-width: 560px\)[\s\S]*?\.blank-workout-options\.strength-category-options \{ grid-template-columns: repeat\(2, minmax\(0, 1fr\)\); \}/);
+
+const strengthCategoryBody = html.match(/function strengthCategoryMuscles\(category\) \{([\s\S]*?)\n    \}/)?.[1];
+assert.ok(strengthCategoryBody, "strength category scope must exist");
+const strengthGroups = [
+  { key: "Bryst", category: "Push" }, { key: "Ryg", category: "Pull" },
+  { key: "Mave", category: "Stabilitet" }, { key: "Cardio", category: "Cardio" }
+];
+const strengthCategoryMuscles = new Function("category", "muscleGroups", strengthCategoryBody);
+assert.deepEqual(strengthCategoryMuscles("Alle", strengthGroups), ["Bryst", "Ryg"], "Alle contains only Push and Pull");
+assert.deepEqual(strengthCategoryMuscles("Push", strengthGroups), ["Bryst"]);
+assert.deepEqual(strengthCategoryMuscles("Pull", strengthGroups), ["Ryg"]);
+assert.deepEqual(strengthCategoryMuscles("Stabilitet", strengthGroups), ["Mave"]);
+
+const uniqueExercisesBody = html.match(/function uniqueExercisesForMuscles\(exercises, muscles\) \{([\s\S]*?)\n    \}/)?.[1];
+assert.ok(uniqueExercisesBody, "strength exercise deduplication must exist");
+const uniqueExercisesForMuscles = new Function("exercises", "muscles", "normalizeExerciseCatalogKey", uniqueExercisesBody);
+const normalizeKey = value => String(value || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+const mergedExercises = uniqueExercisesForMuscles([
+  { name: "Face Pull", muscle: "Bryst" }, { name: "Face Pull", muscle: "Ryg" },
+  { name: "Row", muscle: "Ryg" }, { name: "Plank", muscle: "Mave" }
+], ["Bryst", "Ryg"], normalizeKey);
+assert.deepEqual(mergedExercises.map(exercise => exercise.name), ["Face Pull", "Row"], "Alle removes duplicates and excludes Stabilitet");
 assert.match(html, /data-work4it-leading-icon="calisthenics" onclick="openModernCalisthenicsWorkout\(\)"/);
 assert.match(html, /class="calisthenics-workout-view"/);
 assert.match(html, /id="calisthenicsWorkoutEditorHost"/);

@@ -9,6 +9,8 @@ const source = fs.readFileSync("app/modern-dashboard-ui.js", "utf8");
 const iconSource = fs.readFileSync("app/work4it-icons.js", "utf8");
 const css = fs.readFileSync("app/modern-dashboard-ui.css", "utf8");
 const profile = fs.readFileSync("app/profile-account.js", "utf8");
+const membership = fs.readFileSync("app/membership.js", "utf8");
+const profileWizardSource = fs.readFileSync("app/profile-wizard.js", "utf8");
 const helpContent = fs.readFileSync("app/help-content-config.js", "utf8");
 const screenshotImport = fs.readFileSync("app/screenshot-import.js", "utf8");
 const menuManager = fs.readFileSync("app/workit-menu-manager.js", "utf8");
@@ -21,6 +23,7 @@ new Function(iconSource);
 for (const id of [
   "modernDashboardUI", "modernDashboardTitle", "modernIconRail", "modernFeaturePanel",
   "modernCardGrid", "modernToolPanel", "modernBottomNav", "programGeneratorAccess",
+  "modernInlineActionContent",
   "savedDropdown", "savedSelect", "trashDropdown", "trashItems", "membershipNavStatus",
   "savedProgramsView", "savedProgramsViewTitle", "savedProgramsViewSelect",
   "savedProgramsViewList", "savedProgramsViewEmpty", "savedProgramsViewCount",
@@ -49,7 +52,7 @@ assert.equal((html.match(/data-modern-category=/g) || []).length, 3, "Modern UI 
 
 for (const handler of [
   "openProfileSetup", "openProfileWizardFromMenu", "openMembershipView", "openBlankWorkoutDialog",
-  "openModernProgramGenerator", "openModernSavedPrograms", "continueDashboardWorkout", "startDashboardWorkout",
+  "openModernProgramGenerator", "openModernSavedPrograms", "continueDashboardWorkout", "openDashboardTodayWorkout",
   "openDashboard", "openProgressView", "openCalorieView", "openAiCoach", "openScreenshotImportInfo",
   "exportDataFromMenu", "openHelpAboutDialog", "logoutProfileAccount", "openModernTrash"
 ]) assert.match(source, new RegExp(handler), `Modern UI reuses ${handler}`);
@@ -84,10 +87,38 @@ assert.match(source, /Work4itDashboardRuntime\?\.getSnapshot/);
 assert.doesNotMatch(source, /FirestoreDataService|FirebaseAuthService|\bfetch\(|XMLHttpRequest/, "Modern UI does not introduce a competing data flow");
 assert.match(source, /Forbereder dit dashboard/);
 assert.match(source, /state\.view\.featuredWorkout/);
+assert.match(source, /cta: "Åbn træningspas"/);
+assert.match(source, /handler: "openDashboardTodayWorkout"/);
+assert.doesNotMatch(source, /handler: "startDashboardWorkout"/);
 assert.match(source, /data\.view\?\.activeWorkout/);
 assert.match(source, /function visibleActions\(\)/);
 assert.match(source, /actions\.filter\(action => !action\.activeOnly \|\| hasActiveWorkout\)/);
 assert.match(source, /return active \? \[active, \.\.\.visible\.filter\(action => action\.id !== "active"\)\] : visible/);
+for (const action of ["profile", "training-profile", "membership", "ai-coach", "settings", "trash", "export", "help", "privacy", "feedback", "logout"]) {
+  assert.match(source, new RegExp(`(?:"?${action.replace("-", "\\-")}"?): \\{ rootId:`), `${action} renders in the main field`);
+}
+const featureRenderer = source.match(/function renderFeature\(\) \{([\s\S]*?)\n  \}/)?.[1] || "";
+assert.doesNotMatch(featureRenderer, /modern-feature-open|data-modern-open/, "top navigation has no redundant open button");
+assert.match(source, /function mountInlineAction\(actionId\)/);
+assert.match(source, /function restoreEmbeddedView\(\)/);
+assert.match(source, /if \(activeCategory !== "training"\) \{[\s\S]*?mountInlineAction\(actionId\)/);
+assert.match(source, /openProfileAccountView\?\.\(\{ embedded: true, section: config\.section \}\)/);
+assert.match(source, /openMembershipView\?\.\(\{ embedded: true \}\)/);
+assert.match(source, /openAiCoach\?\.\(\{ embedded: true \}\)/);
+assert.match(source, /ProfileWizard\?\.open\?\.\(\{ mode: "edit", embedded: true \}\)/);
+assert.match(source, /root\.querySelector\?\.\("\.wizard-overlay"\)\?\.setAttribute/);
+assert.match(source, /renderInlineInfoAction\(actionId, root\)/);
+assert.match(profile, /options\.embedded !== true/);
+assert.match(membership, /function openView\(options = \{\}\)/);
+assert.match(membership, /if \(options\.embedded !== true\)/);
+assert.match(html, /function openAiCoach\(options = \{\}\)/);
+assert.match(profileWizardSource, /options\.embedded !== true && !window\.WorkitWindowManager/);
+assert.match(profileWizardSource, /wizard-embedded-root/);
+assert.match(css, /\.modern-feature-card\.has-inline-content/);
+assert.match(css, /\.modern-feature-card \.modern-inline-view/);
+assert.match(css, /\.profile-account-view\.modern-inline-view \.profile-account-tabs/);
+assert.match(css, /\.modern-inline-action-content\.modern-inline-view/);
+assert.match(css, /#profile-wizard-root\.modern-inline-view \.wizard-overlay/);
 assert.match(source, /rail\.hidden = activeCategory === "training"/);
 assert.match(source, /panel\.hidden = activeCategory === "training"/);
 assert.match(source, /grid\.hidden = activeCategory !== "training"/);
@@ -207,21 +238,23 @@ assert.match(css, /@media \(min-width: 760px\)/);
 assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
 
 for (const asset of ["modern-dashboard-ui.css", "modern-dashboard-ui.js"])
-  assert.match(html, new RegExp(`${asset.replace(".", "\\.")}\\?v=20260809-profile-tabs1`));
+  assert.match(html, new RegExp(`${asset.replace(".", "\\.")}\\?v=20260809-inline-navigation1`));
 assert.match(html, /work4it-icons\.js\?v=20260722-icon-system1/);
-assert.match(html, /profile-account\.js\?v=20260809-profile-tabs1/);
-assert.match(html, /membership\.js\?v=20260721-modern-permanent1/);
-assert.match(html, /workit-menu-manager\.js\?v=20260809-profile-tabs1/);
-assert.match(html, /auth-gate\.js\?v=20260809-profile-tabs1/);
-assert.match(html, /service-worker\.js\?v=20260809-profile-tabs1/);
-assert.match(serviceWorker, /work4it-shell-v141-profile-tabs1/);
+assert.match(html, /profile-account\.js\?v=20260809-inline-navigation1/);
+assert.match(html, /profile-wizard\.js\?v=20260809-inline-navigation1/);
+assert.match(html, /membership\.js\?v=20260809-inline-navigation1/);
+assert.match(html, /workit-menu-manager\.js\?v=20260809-strength-all1/);
+assert.match(html, /auth-gate\.js\?v=20260809-strength-all1/);
+assert.match(html, /service-worker\.js\?v=20260809-inline-navigation1/);
+assert.match(serviceWorker, /work4it-shell-v144-inline-navigation1/);
 for (const asset of ["modern-dashboard-ui.css", "modern-dashboard-ui.js"])
-  assert.match(serviceWorker, new RegExp(`${asset.replace(".", "\\.")}\\?v=20260809-profile-tabs1`));
+  assert.match(serviceWorker, new RegExp(`${asset.replace(".", "\\.")}\\?v=20260809-inline-navigation1`));
 assert.match(serviceWorker, /work4it-icons\.js\?v=20260722-icon-system1/);
-assert.match(serviceWorker, /profile-account\.js\?v=20260809-profile-tabs1/);
-assert.match(serviceWorker, /membership\.js\?v=20260721-modern-permanent1/);
-assert.match(serviceWorker, /workit-menu-manager\.js\?v=20260809-profile-tabs1/);
-assert.match(serviceWorker, /auth-gate\.js\?v=20260809-profile-tabs1/);
+assert.match(serviceWorker, /profile-account\.js\?v=20260809-inline-navigation1/);
+assert.match(serviceWorker, /profile-wizard\.js\?v=20260809-inline-navigation1/);
+assert.match(serviceWorker, /membership\.js\?v=20260809-inline-navigation1/);
+assert.match(serviceWorker, /workit-menu-manager\.js\?v=20260809-strength-all1/);
+assert.match(serviceWorker, /auth-gate\.js\?v=20260809-strength-all1/);
 
 const listeners = new Map();
 const window = {

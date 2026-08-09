@@ -755,16 +755,20 @@
     return saved;
   }
 
-  function openView() {
-    window.WorkitViewState?.save?.("membership");
-    clearMenuStateBeforeOpen();
+  function openView(options = {}) {
+    if (options.embedded !== true) {
+      window.WorkitViewState?.save?.("membership");
+      clearMenuStateBeforeOpen();
+    }
     render();
-    document.getElementById("progressView")?.classList.remove("open");
-    document.getElementById("calorieView")?.classList.remove("open");
+    if (options.embedded !== true) {
+      document.getElementById("progressView")?.classList.remove("open");
+      document.getElementById("calorieView")?.classList.remove("open");
+    }
     const view = document.getElementById("membershipView");
     view?.classList.add("open");
     view?.setAttribute("aria-hidden", "false");
-    view?.focus?.({ preventScroll: true });
+    if (options.embedded !== true) view?.focus?.({ preventScroll: true });
   }
 
   function closeView() {

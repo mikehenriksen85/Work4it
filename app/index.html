@@ -55,7 +55,7 @@
   <link rel="apple-touch-icon" href="Pictures/App%20Ikon%20V1.png">
   <link rel="stylesheet" href="exercise-animation/mannequin.css?v=20260716-mannequin-prototype1">
   <link rel="stylesheet" href="progression.css?v=20260718-progression1">
-  <link rel="stylesheet" href="modern-dashboard-ui.css?v=20260809-profile-tabs1">
+  <link rel="stylesheet" href="modern-dashboard-ui.css?v=20260809-inline-navigation1">
   <title>Work4it</title>
   <style>
     :root {
@@ -801,6 +801,9 @@
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 8px;
       margin-bottom: 8px;
+    }
+    .blank-workout-options.strength-category-options {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
     }
     .blank-workout-option {
       display: inline-flex;
@@ -2179,11 +2182,13 @@
       .workout-empty-actions { grid-template-columns: 1fr; }
       .workout-empty-actions .small-btn { width: 100%; }
       .blank-workout-options { grid-template-columns: 1fr; }
+      .blank-workout-options.strength-category-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .blank-workout-option {
         justify-content: flex-start;
         min-height: 54px;
         padding-inline: 16px;
       }
+      .strength-category-options .blank-workout-option { justify-content: center; padding-inline: 8px; }
       .workout-sticky-top .calorie-value {
         font-size: var(--font-size-compact);
       }
@@ -2755,7 +2760,7 @@
     <button class="nav-btn" onclick="goHome()">Hovedmenu</button>
     <div class="app-title" aria-label="Work4it"><img class="brand-header-logo" src="Pictures/App%20Logo%20v1.png" alt="Work4it" width="1536" height="1024"><span class="brand-header-mobile"><img class="brand-header-icon" src="Pictures/App%20Ikon%20V1.png" alt="" width="1254" height="1254"><span class="brand-header-text" id="appTitleText">Work4it</span></span></div>
   </header>
-  <script src="workit-menu-manager.js?v=20260809-profile-tabs1"></script>
+  <script src="workit-menu-manager.js?v=20260809-strength-all1"></script>
 
   <main class="canvas" id="programCanvas">
     <section class="card">
@@ -2784,6 +2789,7 @@
             <p id="trashEmpty">Papirkurven er tom.</p>
           </div>
         </section>
+        <section class="modern-inline-action-content" id="modernInlineActionContent" hidden></section>
       </section>
       <div id="workoutEditorHome" hidden></div>
       <details class="workout-editor-details" id="workoutEditorDetails">
@@ -4871,7 +4877,8 @@
       $("modalTitle").textContent = "Vælg styrkekategori";
       $("modalContent").innerHTML = `
         <p class="helper-text">Vælg hvilke styrkeøvelser du vil se.</p>
-        <div class="blank-workout-options">
+        <div class="blank-workout-options strength-category-options">
+          <button class="small-btn blank-workout-option modern-tone-green" type="button" data-work4it-leading-icon="programs" onclick="selectBlankStrengthCategory('Alle')">Alle</button>
           <button class="small-btn blank-workout-option modern-tone-blue" type="button" data-work4it-leading-icon="training" onclick="selectBlankStrengthCategory('Push')">Push</button>
           <button class="small-btn blank-workout-option modern-tone-violet" type="button" data-work4it-leading-icon="progress" onclick="selectBlankStrengthCategory('Pull')">Pull</button>
           <button class="small-btn blank-workout-option modern-tone-orange" type="button" data-work4it-leading-icon="target" onclick="selectBlankStrengthCategory('Stabilitet')">Stabilitet</button>
@@ -4882,7 +4889,7 @@
     }
 
     function selectBlankStrengthCategory(category) {
-      if (!["Push", "Pull", "Stabilitet"].includes(category)) return;
+      if (!["Alle", "Push", "Pull", "Stabilitet"].includes(category)) return;
       const preserveWorkout = blankStrengthCategoryMode === "existing";
       closeModal();
       if (!preserveWorkout) {
@@ -4890,7 +4897,7 @@
         return;
       }
       blankStrengthCategoryFlowActive = true;
-      setExercisePickerContext(category);
+      setStrengthExercisePickerContext(category);
       const muscles = availablePickerMuscles();
       exercisePickerMuscle = muscles.length === 1 ? muscles[0] : "";
       renderMuscleMenu();
@@ -4951,6 +4958,30 @@
         : null;
       exercisePickerMuscle = "";
       document.querySelectorAll(".movement-btn").forEach(btn => btn.classList.toggle("active", btn.dataset.movement === activeMovementFilter));
+    }
+
+    function strengthCategoryMuscles(category) {
+      const selectedCategories = category === "Alle" ? ["Push", "Pull"] : [category];
+      return [...new Set(muscleGroups
+        .filter(group => selectedCategories.includes(group.category))
+        .map(group => group.key))];
+    }
+
+    function setStrengthExercisePickerContext(category) {
+      const normalized = ["Alle", "Push", "Pull", "Stabilitet"].includes(category) ? category : "Alle";
+      setExercisePickerContext(normalized, strengthCategoryMuscles(normalized));
+    }
+
+    function uniqueExercisesForMuscles(exercises, muscles) {
+      const includedMuscles = new Set(muscles);
+      const seenExercises = new Set();
+      return exercises.filter(exercise => {
+        if (!includedMuscles.has(exercise.muscle)) return false;
+        const key = normalizeExerciseCatalogKey(exercise.name);
+        if (!key || seenExercises.has(key)) return false;
+        seenExercises.add(key);
+        return true;
+      });
     }
 
     function setMovementFilter(movement, event = null) {
@@ -5043,7 +5074,10 @@
 
       const canGoBack = availablePickerMuscles().length > 1;
       title.innerHTML = `<div class="exercise-picker-heading">${canGoBack ? '<button class="exercise-picker-back" type="button" onclick="showMuscleGroups(event)">←</button>' : ""}<span>${esc(tm(exercisePickerMuscle))}: Vælg øvelse</span>${categorySwitch}</div>`;
-      const exercises = catalog.filter(exercise =>
+      const scopedCatalog = blankStrengthCategoryFlowActive && activeMovementFilter === "Alle"
+        ? uniqueExercisesForMuscles(catalog, availablePickerMuscles())
+        : catalog;
+      const exercises = scopedCatalog.filter(exercise =>
         exercise.muscle === exercisePickerMuscle &&
         (activeMovementFilter !== "Calisthenics" || exercise.trainingStyle === "calisthenics")
       );
@@ -7412,13 +7446,21 @@
       openDashboard();
     }
 
-    function startDashboardWorkout() {
+    function openDashboardTodayWorkout() {
+      if (hasActiveWorkoutSession()) return showTrainingSession();
       const programId = modernDashboardSnapshot().view?.featuredWorkout?.id || "";
       if (!programId || !window.Work4itDashboardRuntime?.canStartProgram?.(programId)) return false;
       if (programId && (currentSavedProgramId !== programId || !slotIds().length)) loadSavedProgram(programId);
-      if (!hasActiveWorkoutSession() && validCanvasExerciseCount() === 0) return updateStartTrainingAvailability();
+      if (validCanvasExerciseCount() === 0) return updateStartTrainingAvailability();
       openWorkoutEditor();
-      toggleWorkoutTimer();
+      saveLastActiveView("today");
+      return true;
+    }
+
+    // Behold det tidligere globale handlernavn for kompatibilitet med ældre genveje.
+    // Åbning af dagens program må aldrig i sig selv starte en træningssession.
+    function startDashboardWorkout() {
+      return openDashboardTodayWorkout();
     }
     function daysLeftInTrash(deletedAt) {
       const expires = new Date(deletedAt).getTime() + 30 * 24 * 60 * 60 * 1000;
@@ -7748,7 +7790,7 @@
         return;
       }
       resetWorkoutCanvas(t("ready"));
-      blankStrengthCategoryFlowActive = type === "strength" && ["Push", "Pull", "Stabilitet"].includes(strengthCategory);
+      blankStrengthCategoryFlowActive = type === "strength" && ["Alle", "Push", "Pull", "Stabilitet"].includes(strengthCategory);
       if (type === "cardio") {
         $("workoutTitle").textContent = "Mit nye cardio-pas";
         setExercisePickerContext("Cardio", ["Cardio"]);
@@ -7756,7 +7798,8 @@
         $("workoutTitle").textContent = "Mit nye calisthenics-pas";
         setExercisePickerContext("Calisthenics");
       } else {
-        setExercisePickerContext(blankStrengthCategoryFlowActive ? strengthCategory : "Alle");
+        if (blankStrengthCategoryFlowActive) setStrengthExercisePickerContext(strengthCategory);
+        else setExercisePickerContext("Alle");
       }
       openWorkoutEditor();
       renderDashboard();
@@ -9280,21 +9323,23 @@
       return context;
     }
 
-    function openAiCoach() {
+    function openAiCoach(options = {}) {
       renderAiCoachContext();
       const panel = $("aiCoachPanel");
       const sheet = panel?.querySelector(".ai-coach-sheet");
       if (!panel || !sheet) return;
-      window.WorkitMenuManager?.openSurface?.("ai-coach", {
-        roots: [sheet],
-        close: () => closeAiCoach(false)
-      });
+      if (options.embedded !== true) {
+        window.WorkitMenuManager?.openSurface?.("ai-coach", {
+          roots: [sheet],
+          close: () => closeAiCoach(false)
+        });
+      }
       panel.classList.add("open");
       panel.setAttribute("aria-hidden", "false");
-      document.body.classList.add("ai-coach-open");
+      document.body.classList.toggle("ai-coach-open", options.embedded !== true);
       $("aiCoachButton")?.setAttribute("aria-expanded", "true");
       updateAiRequestCounterDisplay();
-      window.requestAnimationFrame(() => $("copilotInput")?.focus?.({ preventScroll: true }));
+      if (options.embedded !== true) window.requestAnimationFrame(() => $("copilotInput")?.focus?.({ preventScroll: true }));
     }
 
     function closeAiCoach(notifyManager = true) {
@@ -10428,19 +10473,24 @@
     function continueDailyWorkout() {
       if (hasActiveWorkoutSession()) {
         showTrainingSession();
-        return;
+        return true;
       }
       if (currentProgramSession?.days?.length || document.querySelectorAll(".exercise").length) {
         $("autosaveStatus").textContent = "Seneste aktive træningspas er klar";
-        return;
+        openWorkoutEditor();
+        saveLastActiveView("today");
+        return true;
       }
       const programId = preferredDailyProgramId();
       if (programId) {
         loadSavedProgram(programId);
         $("autosaveStatus").textContent = "Seneste aktive træningspas er klar";
-        return;
+        openWorkoutEditor();
+        saveLastActiveView("today");
+        return true;
       }
       $("autosaveStatus").textContent = "Opret eller gem dit første træningspas";
+      return false;
     }
 
     const dailyMotivationExerciseCount = { low: 3, normal: 5, high: 8 };
@@ -10929,16 +10979,16 @@
   <script src="ai-copilot-actions.js?v=20260713-ai-coach1"></script>
   <script src="help-content-config.js?v=20260628-help1"></script>
   <script src="password-visibility.js?v=20260621-password-toggle1"></script>
-  <script src="auth-gate.js?v=20260809-profile-tabs1"></script>
+  <script src="auth-gate.js?v=20260809-strength-all1"></script>
   <script src="theme-service.js?v=20260627-theme1"></script>
   <script src="work4it-icons.js?v=20260722-icon-system1"></script>
-  <script src="modern-dashboard-ui.js?v=20260809-profile-tabs1"></script>
-  <script src="profile-account.js?v=20260809-profile-tabs1"></script>
-  <script src="profile-wizard.js?v=20260716-cardio-empty-time1"></script>
+  <script src="modern-dashboard-ui.js?v=20260809-inline-navigation1"></script>
+  <script src="profile-account.js?v=20260809-inline-navigation1"></script>
+  <script src="profile-wizard.js?v=20260809-inline-navigation1"></script>
   <script src="daily-start-wizard.js?v=20260615-window1"></script>
   <script src="wizard-controller.js?v=20260622-fixed-routing1"></script>
   <script src="stripe-config.js?v=20260711-permanent-admin1"></script>
-  <script src="membership.js?v=20260721-modern-permanent1"></script>
+  <script src="membership.js?v=20260809-inline-navigation1"></script>
   <script type="module" src="firebase-config.js?v=20260715-exercise-animations1"></script>
   <script type="module" src="exercise-animation-cloud-service.js?v=20260716-backend-admin-read1"></script>
   <script type="module" src="stripe-checkout.js?v=20260713-admin-subscription-test1"></script>
@@ -10948,7 +10998,7 @@
   <script>
     if ("serviceWorker" in navigator && window.isSecureContext) {
       window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./service-worker.js?v=20260809-profile-tabs1").catch(error => {
+        navigator.serviceWorker.register("./service-worker.js?v=20260809-inline-navigation1").catch(error => {
           console.warn("Work4it kunne ikke aktivere offline app-shell.", error);
         });
       });

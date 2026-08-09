@@ -524,11 +524,12 @@
 
   function open(options = {}) {
     if (!window.TrainingWizardStore || document.getElementById("profile-wizard-root")) return;
-    if (!window.WorkitWindowManager?.canOpen?.("profile-wizard")) return;
+    if (options.embedded !== true && !window.WorkitWindowManager?.canOpen?.("profile-wizard")) return;
     window.WizardUI?.ensureStyles?.();
     state = freshState(options.mode === "edit" ? "edit" : "new");
     const root = document.createElement("div");
     root.id = "profile-wizard-root";
+    root.classList.toggle("wizard-embedded-root", options.embedded === true);
     root.addEventListener("click", handleClick);
     root.addEventListener("input", handleInput);
     root.addEventListener("change", handleInput);

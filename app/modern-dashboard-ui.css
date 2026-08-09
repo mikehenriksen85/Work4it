@@ -265,6 +265,107 @@ body {
 
 .modern-feature-open.destructive { background: var(--red); color: #fff; }
 
+.modern-feature-card.has-inline-content {
+  min-height: 0;
+  display: block;
+  padding: 0;
+  overflow: visible;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.modern-feature-card .modern-inline-view {
+  position: static !important;
+  inset: auto !important;
+  z-index: auto !important;
+  width: 100% !important;
+  max-width: none !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  display: block !important;
+  overflow: visible !important;
+  padding: 0 !important;
+  background: transparent !important;
+}
+
+.modern-feature-card .modern-inline-view > :first-child { width: 100%; max-width: none; margin: 0; }
+.modern-feature-card .profile-account-view.modern-inline-view .profile-account-head,
+.modern-feature-card .profile-account-view.modern-inline-view .profile-account-intro,
+.modern-feature-card .profile-account-view.modern-inline-view .profile-account-tabs,
+.modern-feature-card .membership-view.modern-inline-view .membership-head,
+.modern-feature-card .ai-coach-panel.modern-inline-view .ai-coach-head .close { display: none !important; }
+.modern-feature-card .profile-account-view.modern-inline-view .profile-account-shell { width: 100%; gap: 0; }
+.modern-feature-card .membership-view.modern-inline-view .membership-shell { width: 100%; max-height: none; overflow: visible; margin: 0; }
+.modern-feature-card .ai-coach-panel.modern-inline-view .ai-coach-sheet {
+  width: 100%;
+  max-height: none;
+  overflow: visible;
+  border-radius: var(--modern-radius-lg);
+  box-shadow: var(--shadow-soft);
+}
+.modern-feature-card #profile-wizard-root.modern-inline-view .wizard-overlay {
+  position: static;
+  inset: auto;
+  min-height: 0;
+  padding: 0;
+  background: transparent;
+}
+.modern-feature-card #profile-wizard-root.modern-inline-view .wizard-panel {
+  width: 100%;
+  max-width: none;
+  max-height: none;
+  border-radius: var(--modern-radius-lg);
+}
+.modern-feature-card #profile-wizard-root.modern-inline-view .wizard-close { display: none; }
+.modern-feature-card #trashDropdown.modern-inline-view {
+  padding: clamp(14px, 3vw, 22px) !important;
+  border: 1px solid var(--border);
+  border-radius: var(--modern-radius-lg);
+  background: var(--card) !important;
+  box-shadow: var(--shadow-soft);
+}
+
+.modern-inline-action-content.modern-inline-view {
+  display: grid !important;
+  gap: var(--modern-space-3);
+  padding: clamp(16px, 4vw, 24px) !important;
+  border: 1px solid var(--border);
+  border-radius: var(--modern-radius-lg);
+  background: var(--card) !important;
+  box-shadow: var(--shadow-soft);
+}
+.modern-inline-action-content h2,
+.modern-inline-action-content h3,
+.modern-inline-action-content p { margin: 0; }
+.modern-inline-action-content > p,
+.modern-inline-info-item p { color: var(--text-secondary); line-height: var(--line-height-body); }
+.modern-inline-info-list { display: grid; gap: 10px; }
+.modern-inline-info-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--modern-radius-md);
+  background: color-mix(in srgb, var(--input), transparent 16%);
+}
+.modern-inline-info-item .modern-icon { width: 40px; height: 40px; display: grid; place-items: center; }
+.modern-inline-primary {
+  width: fit-content;
+  min-height: var(--modern-touch);
+  padding: 10px 16px;
+  border: 0;
+  border-radius: var(--modern-radius-sm);
+  background: var(--green);
+  color: #04150a;
+  font: inherit;
+  font-weight: var(--font-weight-bold);
+  cursor: pointer;
+}
+.modern-inline-primary.destructive { background: var(--red); color: #fff; }
+
 .modern-card-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--modern-space-2); }
 
 .modern-mini-card {

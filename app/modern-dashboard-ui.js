@@ -42,7 +42,21 @@
   let activeCategory = "training";
   let activeAction = "today";
   let trainingDashboardScrollPosition = 0;
+  let embeddedView = null;
   const TRAINING_DASHBOARD_SCROLL_KEY = "work4it:trainingDashboardScrollPosition";
+  const INLINE_ACTIONS = Object.freeze({
+    profile: { rootId: "profileAccountView", type: "profile", section: "personal" },
+    "training-profile": { rootId: "profile-wizard-root", type: "wizard" },
+    membership: { rootId: "membershipView", type: "membership" },
+    "ai-coach": { rootId: "aiCoachPanel", type: "ai-coach" },
+    settings: { rootId: "profileAccountView", type: "profile", section: "settings" },
+    trash: { rootId: "trashDropdown", type: "trash" },
+    export: { rootId: "modernInlineActionContent", type: "info" },
+    help: { rootId: "modernInlineActionContent", type: "info" },
+    privacy: { rootId: "modernInlineActionContent", type: "info" },
+    feedback: { rootId: "modernInlineActionContent", type: "info" },
+    logout: { rootId: "modernInlineActionContent", type: "info" }
+  });
 
   const byId = id => document.getElementById(id);
   const escapeHtml = value => String(value ?? "")
@@ -121,8 +135,8 @@
         title: workout.title || "Næste træning",
         description: workout.heading || "Dit næste program er klar.",
         meta: workoutMeta(workout),
-        cta: "Start træning",
-        handler: "startDashboardWorkout",
+        cta: "Åbn træningspas",
+        handler: "openDashboardTodayWorkout",
         disabled: window.Work4itDashboardRuntime?.canStartProgram?.(workout.id) === false
       };
     }
@@ -165,9 +179,15 @@
     const panel = byId("modernFeaturePanel");
     if (!panel) return;
     panel.hidden = activeCategory === "training";
-    if (panel.hidden) return;
+    if (panel.hidden) {
+      restoreEmbeddedView();
+      return;
+    }
     const action = actionState(selectedAction());
+    if (embeddedView?.actionId === action.id && panel.contains(embeddedView.root)) return;
+    restoreEmbeddedView();
     panel.dataset.tone = action.tone || "blue";
+    panel.classList.remove("has-inline-content");
     panel.setAttribute("aria-labelledby", `modern-tab-${action.id}`);
     panel.innerHTML = `
       <div class="modern-feature-copy">
@@ -176,9 +196,97 @@
         <p class="modern-feature-description">${escapeHtml(action.description || "")}</p>
         ${action.meta ? `<div class="modern-feature-meta">${escapeHtml(action.meta)}</div>` : ""}
       </div>
-      <span class="modern-feature-art modern-icon" aria-hidden="true">${iconMarkup(action.icon)}</span>
-      <button class="modern-feature-open${action.destructive ? " destructive" : ""}" type="button"
-        data-modern-open="${escapeHtml(action.id)}" ${action.disabled ? 'disabled aria-disabled="true"' : 'aria-disabled="false"'}>${escapeHtml(action.cta || "Åbn")}</button>`;
+      <span class="modern-feature-art modern-icon" aria-hidden="true">${iconMarkup(action.icon)}</span>`;
+  }
+
+  function restoreEmbeddedView() {
+    if (!embeddedView) return false;
+    const { root, placeholder, type } = embeddedView;
+    if (type === "wizard") {
+      window.ProfileWizard?.close?.();
+      placeholder?.remove?.();
+      embeddedView = null;
+      byId("modernFeaturePanel")?.classList.remove("has-inline-content");
+      return true;
+    }
+    if (type === "profile" || type === "membership") {
+      root.classList.remove("open");
+      root.setAttribute("aria-hidden", "true");
+    } else if (type === "ai-coach") {
+      root.classList.remove("open");
+      root.setAttribute("aria-hidden", "true");
+      root.setAttribute("aria-modal", "true");
+      document.body.classList.remove("ai-coach-open");
+    } else if (type === "trash") {
+      root.hidden = true;
+    } else if (type === "info") {
+      root.hidden = true;
+      root.replaceChildren();
+    }
+    root.classList.remove("modern-inline-view");
+    if (placeholder?.parentNode) placeholder.parentNode.insertBefore(root, placeholder);
+    placeholder?.remove?.();
+    embeddedView = null;
+    byId("modernFeaturePanel")?.classList.remove("has-inline-content");
+    return true;
+  }
+
+  function renderInlineInfoAction(actionId, root) {
+    const help = window.Work4itContent?.locales?.[window.Work4itContent?.defaultLocale || "da"]?.help
+      || window.Work4itContent?.locales?.da?.help || {};
+    const helpFeatures = (help.features || []).map(feature => `
+      <article class="modern-inline-info-item">
+        <span class="modern-icon modern-tone-blue" aria-hidden="true">${iconMarkup(feature.icon || "help")}</span>
+        <div><h3>${escapeHtml(feature.title || "")}</h3><p>${escapeHtml(feature.text || "")}</p></div>
+      </article>`).join("");
+    const views = {
+      help: `<h2>${escapeHtml(help.title || "Hjælp og om Work4it")}</h2><p>${escapeHtml(help.intro || "Find hjælp til Work4its funktioner.")}</p><div class="modern-inline-info-list">${helpFeatures}</div>`,
+      privacy: `<h2>Privatliv og GDPR</h2><p>Work4it gemmer profil- og træningsdata i Firebase/Firestore, når du er logget ind, og bruger lokal lagring som cache og offline-backup.</p><p>Du kan eksportere data, rydde lokal cache eller slette konto og cloud-data under Profil og konto.</p><button class="modern-inline-primary" type="button" data-modern-open="privacy">Læs privatlivspolitikken på Work-4it.dk</button>`,
+      feedback: `<h2>Feedback</h2><p>Send fejl, forslag eller forbedringsønsker til Work4it. Feedbackformularen åbnes først, når du vælger knappen nedenfor.</p><button class="modern-inline-primary" type="button" data-modern-open="feedback">Åbn feedbackformular</button>`,
+      export: `<h2>Eksportér data</h2><p>Hent en kopi af dine Work4it-data fra denne konto og enhed.</p><button class="modern-inline-primary" type="button" data-modern-open="export">Eksportér mine data</button>`,
+      logout: `<h2>Log ud</h2><p>Afslut den aktive Work4it-session på denne enhed. Dine gemte cloud-data bevares.</p><button class="modern-inline-primary destructive" type="button" data-modern-open="logout">Log ud</button>`
+    };
+    root.innerHTML = views[actionId] || "";
+    root.hidden = false;
+  }
+
+  function mountInlineAction(actionId) {
+    const config = INLINE_ACTIONS[actionId];
+    const panel = byId("modernFeaturePanel");
+    if (config?.type === "wizard" && !byId(config.rootId)) window.ProfileWizard?.open?.({ mode: "edit", embedded: true });
+    const root = config ? byId(config.rootId) : null;
+    if (!config || !panel || !root) return false;
+    if (embeddedView?.root !== root || embeddedView?.actionId !== actionId) {
+      restoreEmbeddedView();
+      const placeholder = document.createComment(`work4it-${config.rootId}-home`);
+      root.parentNode?.insertBefore(placeholder, root);
+      panel.replaceChildren(root);
+      root.classList.add("modern-inline-view");
+      embeddedView = { actionId, root, placeholder, type: config.type };
+    }
+    panel.hidden = false;
+    panel.classList.add("has-inline-content");
+    panel.dataset.tone = selectedAction()?.tone || "blue";
+    panel.setAttribute("aria-labelledby", `modern-tab-${actionId}`);
+    if (config.type === "profile") {
+      window.openProfileAccountView?.({ embedded: true, section: config.section });
+      window.selectProfileAccountSection?.(config.section);
+    } else if (config.type === "membership") {
+      window.openMembershipView?.({ embedded: true });
+    } else if (config.type === "ai-coach") {
+      root.setAttribute("aria-modal", "false");
+      window.openAiCoach?.({ embedded: true });
+    } else if (config.type === "trash") {
+      window.renderTrash?.();
+      root.hidden = false;
+      root.style.removeProperty("display");
+    } else if (config.type === "info") {
+      renderInlineInfoAction(actionId, root);
+    } else if (config.type === "wizard") {
+      root.querySelector?.(".wizard-overlay")?.setAttribute?.("aria-modal", "false");
+    }
+    window.Work4itIcons?.hydrate?.(root);
+    return true;
   }
 
   function renderCards() {
@@ -528,6 +636,10 @@
     if (!visibleActions().some(action => action.id === actionId)) return false;
     activeAction = actionId;
     render();
+    if (activeCategory !== "training") {
+      const mounted = mountInlineAction(actionId);
+      if (!mounted) invokeAction(actionId);
+    }
     window.requestAnimationFrame(() => byId(`modern-tab-${actionId}`)?.scrollIntoView?.({ behavior: "smooth", block: "nearest", inline: "center" }));
     byId("modernFeaturePanel")?.scrollIntoView?.({ behavior: "smooth", block: "nearest" });
     return true;
@@ -539,6 +651,7 @@
     activeAction = CATEGORIES[category].actions[0].id;
     closeToolPanel();
     render();
+    if (category !== "training") window.requestAnimationFrame(() => mountInlineAction(activeAction) || invokeAction(activeAction));
     byId("modernDashboardUI")?.scrollIntoView?.({ behavior: "smooth", block: "start" });
     return true;
   }
@@ -596,6 +709,8 @@
     setCategory,
     selectAction,
     invokeAction,
+    mountInlineAction,
+    restoreEmbeddedView,
     closeToolPanel,
     closeProgramCreationView,
     closeCalisthenicsWorkoutView,

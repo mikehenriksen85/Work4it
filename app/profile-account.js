@@ -433,8 +433,10 @@
   }
 
   function openProfileAccountView(options = {}) {
-    if (typeof window.saveLastActiveView === "function") window.saveLastActiveView("profile");
-    else window.WorkitViewState?.save?.("profile");
+    if (options.embedded !== true) {
+      if (typeof window.saveLastActiveView === "function") window.saveLastActiveView("profile");
+      else window.WorkitViewState?.save?.("profile");
+    }
     document.getElementById("progressView")?.classList.remove("open");
     document.getElementById("membershipView")?.classList.remove("open");
     document.getElementById("calorieView")?.classList.remove("open");
@@ -445,7 +447,7 @@
     view?.setAttribute("aria-hidden", "false");
     selectProfileAccountSection(options.section || storedProfileAccountSection(), { persist: options.persistSection !== false });
     window.Work4itIcons?.hydrate?.(view);
-    if (options.focusTitle === true) window.requestAnimationFrame(() => byId("profileAccountViewTitle")?.focus?.({ preventScroll: true }));
+    if (options.embedded !== true && options.focusTitle === true) window.requestAnimationFrame(() => byId("profileAccountViewTitle")?.focus?.({ preventScroll: true }));
   }
 
   function closeProfileAccountView(options = {}) {
