@@ -1,4 +1,4 @@
-const CACHE_NAME = "work4it-shell-v145-direct-navigation1";
+const CACHE_NAME = "work4it-shell-v146-privacy-link1";
 const ANIMATION_CACHE_NAME = "work4it-exercise-animations-v1";
 const APP_SHELL = [
   "./",

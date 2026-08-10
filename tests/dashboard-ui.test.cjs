@@ -100,7 +100,7 @@ assert.match(html, /function updateLiveTrainingVisibility\(/);
 assert.match(html, /const isActive = hasActiveWorkoutSession\(\)/);
 assert.match(html, /document\.body\.dataset\.liveTraining = String\(isActive\)/);
 assert.match(html, /function hasActiveWorkoutSession\(\) \{\s+return isActiveWorkoutSession\(activeWorkoutSession\)/);
-assert.match(html, /service-worker\.js\?v=20260809-direct-navigation1/);
+assert.match(html, /service-worker\.js\?v=20260810-privacy-link1/);
 assert.doesNotMatch(html, /Hurtig adgang|modernShortcutsTitle|modern-shortcuts/);
 assert.match(html, /id="modernCardGrid" aria-label="Træning: funktioner"/);
 assert.match(html, /dashboard-view-model\.js\?v=20260718-dashboard-buttons1/);

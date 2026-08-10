@@ -250,8 +250,8 @@ assert.match(html, /profile-wizard\.js\?v=20260809-direct-navigation1/);
 assert.match(html, /membership\.js\?v=20260809-direct-navigation1/);
 assert.match(html, /workit-menu-manager\.js\?v=20260809-strength-all1/);
 assert.match(html, /auth-gate\.js\?v=20260809-strength-all1/);
-assert.match(html, /service-worker\.js\?v=20260809-direct-navigation1/);
-assert.match(serviceWorker, /work4it-shell-v145-direct-navigation1/);
+assert.match(html, /service-worker\.js\?v=20260810-privacy-link1/);
+assert.match(serviceWorker, /work4it-shell-v146-privacy-link1/);
 for (const asset of ["modern-dashboard-ui.css", "modern-dashboard-ui.js"])
   assert.match(serviceWorker, new RegExp(`${asset.replace(".", "\\.")}\\?v=20260809-direct-navigation1`));
 assert.match(serviceWorker, /work4it-icons\.js\?v=20260722-icon-system1/);

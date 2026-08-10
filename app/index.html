@@ -3906,6 +3906,7 @@
       $("modalTitle").textContent = "Privatliv og GDPR";
       $("modalContent").innerHTML = `
         <p class="about-intro"><strong>Work4it behandler persondata for at kunne gemme din profil, dine træningspas og din udvikling.</strong> Denne side er praktisk information i appen og skal juridisk gennemgås, før Work4it bruges kommercielt.</p>
+        <p class="about-policy-link"><a href="https://work-4it.dk/" target="_blank" rel="noopener noreferrer">Læs den fulde privatlivspolitik på Work-4it.dk <span aria-hidden="true">↗</span></a></p>
         <div class="about-feature-grid">
           <section class="about-feature"><h3>Data vi gemmer</h3><p>Kontakt/login-data fra Firebase, profiloplysninger, alder, køn, højde, vægt, kropsmålinger, mål, træningsopsætning, programmer, øvelser, sæt, reps, kg, pauser, historik, kalorieestimater, AI Copilot-kommandoer, imports, medlemskabsstatus og lokale appindstillinger.</p></section>
           <section class="about-feature"><h3>Hvor data gemmes</h3><p>Når du er logget ind, gemmes understøttede data i Firebase/Firestore under <code>users/{uid}</code>. Browserens localStorage bruges som cache og fallback, så appen kan fortsætte ved midlertidige forbindelsesproblemer.</p></section>
@@ -10998,7 +10999,7 @@
   <script>
     if ("serviceWorker" in navigator && window.isSecureContext) {
       window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./service-worker.js?v=20260809-direct-navigation1").catch(error => {
+        navigator.serviceWorker.register("./service-worker.js?v=20260810-privacy-link1").catch(error => {
           console.warn("Work4it kunne ikke aktivere offline app-shell.", error);
         });
       });
