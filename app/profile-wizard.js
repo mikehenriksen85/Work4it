@@ -101,7 +101,13 @@
   });
 
   let state = null;
-  const totalSteps = 7;
+  function totalSteps() {
+    return state?.mode === "training" ? 6 : 7;
+  }
+
+  function displayedStep() {
+    return state?.mode === "training" && state.step >= 2 ? state.step + 1 : state.step;
+  }
 
   function freshState(mode) {
     const profile = window.TrainingWizardStore?.getProfile?.() || {};
@@ -298,7 +304,8 @@
   }
 
   function stepHtml() {
-    if (state.step === 1) {
+    const step = displayedStep();
+    if (step === 1) {
       return `<h2 class="wizard-step-title">Prioritér dine træningsmål</h2>
         <p class="wizard-help">Vælg dit vigtigste mål først. Sekundært og tertiært mål er valgfrie og må ikke være det samme.</p>
         <div class="wizard-goal-priorities">
@@ -307,7 +314,7 @@
           ${goalSelect("tertiary", "🥉 Tertiært mål", true)}
         </div>`;
     }
-    if (state.step === 2) {
+    if (step === 2) {
       return `<h2 class="wizard-step-title">Fortæl lidt om dig</h2>
         <p class="wizard-help">Oplysningerne gemmes lokalt i din profil og kan ændres senere.</p>
         <div class="wizard-fields">
@@ -323,18 +330,18 @@
             <span>BMI kan stadig beregnes ud fra højde og vægt, fordi BMI-formlen ikke afhænger af køn. Uden oplysning om køn kan kønsspecifikke estimater som energibehov, fortolkning af fedtprocent og visse træningsanbefalinger dog blive mindre præcise.</span>
           </div>` : ""}`;
     }
-    if (state.step === 3) {
+    if (step === 3) {
       return `<h2 class="wizard-step-title">Hvad er dit erfaringsniveau?</h2>
         <p class="wizard-help">Niveauet bruges til at tilpasse programmets mængde og kompleksitet.</p>
         <div class="wizard-options">${optionButtons(experienceLevels, state.experience, "experience")}</div>`;
     }
-    if (state.step === 4) {
+    if (step === 4) {
       const days = Array.from({ length: 7 }, (_, index) => ({ value: String(index + 1), label: String(index + 1) }));
       return `<h2 class="wizard-step-title">Hvor ofte vil du træne?</h2>
         <p class="wizard-help">Vælg antal træningsdage pr. uge.</p>
         <div class="wizard-days">${optionButtons(days, String(state.trainingDaysPerWeek), "days")}</div>`;
     }
-    if (state.step === 5) {
+    if (step === 5) {
       if (state.goal === "cardio") {
         return `<h2 class="wizard-step-title">Cardio er valgt som fokus</h2>
           <p class="wizard-help">Programmet sammensættes af forskellige cardioformer med fokus på kondition, kredsløb og udholdenhed.</p>
@@ -347,7 +354,7 @@
         <p class="wizard-help">Vælg gerne flere områder. Tryk derefter på Næste.</p>
         <div class="wizard-options">${optionButtons(focusAreas, state.focusAreas, "focus", true)}</div>`;
     }
-    if (state.step === 6) {
+    if (step === 6) {
       return `<h2 class="wizard-step-title">Hvordan vil du træne?</h2>
         <p class="wizard-help">Valgene bruges ved fremtidig programgenerering og anbefalinger.</p>
         <div class="wizard-subtitle">Foretrukken træningsstil</div>
@@ -373,38 +380,40 @@
   }
 
   function canContinue() {
-    if (state.step === 1) return Boolean(state.trainingGoals.primary);
-    if (state.step === 2) {
+    const step = displayedStep();
+    if (step === 1) return Boolean(state.trainingGoals.primary);
+    if (step === 2) {
       return Number(state.heightCm) >= 50 && Number(state.weightKg) > 0 &&
         Number(state.age) >= 13 && Boolean(state.gender);
     }
-    if (state.step === 3) return Boolean(state.experience);
-    if (state.step === 4) return state.trainingDaysPerWeek > 0;
-    if (state.step === 5) return state.goal === "cardio" || state.focusAreas.length > 0;
-    if (state.step === 6) return Boolean(state.exercisePreference && state.preferredTrainingStyle);
+    if (step === 3) return Boolean(state.experience);
+    if (step === 4) return state.trainingDaysPerWeek > 0;
+    if (step === 5) return state.goal === "cardio" || state.focusAreas.length > 0;
+    if (step === 6) return Boolean(state.exercisePreference && state.preferredTrainingStyle);
     return true;
   }
 
   function render() {
     const root = document.getElementById("profile-wizard-root");
     if (!root || !state) return;
-    const progress = Math.round((state.step / totalSteps) * 100);
+    const stepCount = totalSteps();
+    const progress = Math.round((state.step / stepCount) * 100);
     root.innerHTML = `<div class="wizard-overlay" role="dialog" aria-modal="true" aria-labelledby="profile-wizard-title">
       <section class="wizard-panel">
         <header class="wizard-head">
           <div class="wizard-head-row">
-            <div class="wizard-title" id="profile-wizard-title">${state.mode === "edit" ? "Rediger profilopsætning" : "Kom godt i gang"}</div>
+          <div class="wizard-title" id="profile-wizard-title">${state.mode === "training" ? "TræningsWizard" : state.mode === "edit" ? "Rediger profilopsætning" : "Kom godt i gang"}</div>
             <button type="button" class="wizard-close" data-action="close" aria-label="Luk">×</button>
           </div>
           <div class="wizard-progress"><span style="width:${progress}%"></span></div>
-          <div class="wizard-progress-meta"><span>Trin ${state.step} af ${totalSteps}</span><span>${progress}%</span></div>
+          <div class="wizard-progress-meta"><span>Trin ${state.step} af ${stepCount}</span><span>${progress}%</span></div>
         </header>
         <div class="wizard-content">${stepHtml()}</div>
         <footer class="wizard-footer">
           <button type="button" class="wizard-button" data-action="back" ${state.step === 1 ? "disabled" : ""}>Tilbage</button>
-          ${state.step < totalSteps
+          ${state.step < stepCount
             ? `<button type="button" class="wizard-button primary" data-action="next" ${canContinue() ? "" : "disabled"}>Næste</button>`
-            : `<button type="button" class="wizard-button create" data-action="create">${state.mode === "edit" ? "Gem profil og program" : "Opret program"}</button>`}
+            : `<button type="button" class="wizard-button create" data-action="create">${state.mode === "training" ? "Gem træningsopsætning og program" : state.mode === "edit" ? "Gem profil og program" : "Opret program"}</button>`}
         </footer>
       </section>
     </div>`;
@@ -417,7 +426,7 @@
   }
 
   function moveTo(step) {
-    state.step = Math.max(1, Math.min(totalSteps, step));
+    state.step = Math.max(1, Math.min(totalSteps(), step));
     render();
   }
 
@@ -454,12 +463,12 @@
     if (action === "experience") {
       state.experience = value;
       state.generatedPrograms = [];
-      return moveTo(4);
+      return moveTo(state.mode === "training" ? 3 : 4);
     }
     if (action === "days") {
       state.trainingDaysPerWeek = Number(value);
       state.generatedPrograms = [];
-      return moveTo(5);
+      return moveTo(state.mode === "training" ? 4 : 5);
     }
     if (action === "preference") {
       state.exercisePreference = value;
@@ -526,7 +535,7 @@
     if (!window.TrainingWizardStore || document.getElementById("profile-wizard-root")) return;
     if (options.embedded !== true && !window.WorkitWindowManager?.canOpen?.("profile-wizard")) return;
     window.WizardUI?.ensureStyles?.();
-    state = freshState(options.mode === "edit" ? "edit" : "new");
+    state = freshState(options.mode === "training" ? "training" : options.mode === "edit" ? "edit" : "new");
     const root = document.createElement("div");
     root.id = "profile-wizard-root";
     root.classList.toggle("wizard-embedded-root", options.embedded === true);

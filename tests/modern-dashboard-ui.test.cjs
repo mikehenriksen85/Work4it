@@ -33,7 +33,7 @@ for (const id of [
   "cardioWorkoutView", "cardioWorkoutViewTitle", "cardioWorkoutEditorHost",
   "profileAccountTabs", "profileAccountViewTitle",
   "profileSectionPersonal", "profileSectionAccount", "profileSectionSecurity",
-  "profileSectionTraining", "profileSectionPrivacy", "themeSettingsSection"
+  "profileSectionTraining", "themeSettingsSection"
 ]) {
   assert.equal((html.match(new RegExp(`id=["']${id}["']`, "g")) || []).length, 1, `${id} must be unique`);
 }
@@ -54,24 +54,31 @@ for (const handler of [
   "openProfileSetup", "openProfileWizardFromMenu", "openMembershipView", "openBlankWorkoutDialog",
   "openModernProgramGenerator", "openModernSavedPrograms", "continueDashboardWorkout", "openDashboardTodayWorkout",
   "openDashboard", "openProgressView", "openCalorieView", "openAiCoach", "openScreenshotImportInfo",
-  "exportDataFromMenu", "openHelpAboutDialog", "logoutProfileAccount", "openModernTrash"
+  "openHelpAboutDialog", "logoutProfileAccount", "openModernTrash"
 ]) assert.match(source, new RegExp(handler), `Modern UI reuses ${handler}`);
 
-assert.match(source, /selectProfileAccountSection\?\.\("settings", \{ focus: true \}\)/);
-assert.equal((html.match(/data-profile-account-tab=/g) || []).length, 6, "Profile has exactly six top tabs");
-assert.equal((html.match(/data-profile-account-section=/g) || []).length, 6, "Profile has exactly six content sections");
+assert.match(source, /selectProfileAccountSection\?\.\("personal", \{ focus: true \}\)/);
+assert.equal((html.match(/data-profile-account-tab=/g) || []).length, 6, "Indstillinger has exactly six unique submenus");
+assert.equal((html.match(/data-profile-account-section=/g) || []).length, 6, "Each Indstillinger submenu has one content section");
 for (const [section, label] of [
-  ["personal", "Personlige oplysninger"],
+  ["personal", "Profil og konto"],
   ["account", "Konto og login"],
   ["security", "Sikkerhed"],
   ["training", "Træningsopsætning"],
   ["privacy", "Data og privatliv"],
-  ["settings", "Tema/Indstillinger"]
+  ["settings", "Temaindstillinger"]
 ]) {
   assert.match(html, new RegExp(`data-profile-account-tab="${section}"[\\s\\S]*?<span>${label.replace("/", "\\/")}</span>`));
   assert.match(html, new RegExp(`data-profile-account-section="${section}"`));
 }
 assert.match(profile, /const profileAccountSectionKey = "work4it:profileAccountSection"/);
+assert.match(profile, /Object\.freeze\(\["personal", "account", "security", "training", "privacy", "settings"\]\)/);
+assert.match(html, /id="profileSectionPrivacy" data-profile-account-section="privacy"/);
+assert.match(html, /id="settingsAppDisplayTitle">App-visning/);
+assert.match(html, /onclick="exportProfileData\(\)"/);
+assert.match(html, /onclick="clearAllLocalData\(\)"/);
+assert.match(html, /onclick="openPrivacyPolicyDialog\(\)"/);
+assert.match(html, /id="profileSectionTraining" data-profile-account-section="training"/);
 assert.match(profile, /function selectProfileAccountSection\(section = "personal", options = \{\}\)/);
 assert.match(profile, /panel\.hidden = !active/);
 assert.match(profile, /tab\.setAttribute\("aria-selected", String\(active\)\)/);
@@ -94,7 +101,7 @@ assert.match(source, /data\.view\?\.activeWorkout/);
 assert.match(source, /function visibleActions\(\)/);
 assert.match(source, /actions\.filter\(action => !action\.activeOnly \|\| hasActiveWorkout\)/);
 assert.match(source, /return active \? \[active, \.\.\.visible\.filter\(action => action\.id !== "active"\)\] : visible/);
-for (const action of ["profile", "training-profile", "membership", "ai-coach", "settings", "trash", "export", "help", "privacy", "feedback", "logout"]) {
+for (const action of ["training-profile", "membership", "ai-coach", "settings", "trash", "help", "feedback", "logout"]) {
   assert.match(source, new RegExp(`(?:"?${action.replace("-", "\\-")}"?): \\{ rootId:`), `${action} renders in the main field`);
 }
 const featureRenderer = source.match(/function renderFeature\(\) \{([\s\S]*?)\n  \}/)?.[1] || "";
@@ -108,7 +115,12 @@ assert.doesNotMatch(source, /if \(activeCategory !== "training"\) \{[\s\S]*?moun
 assert.match(source, /openProfileAccountView\?\.\(\{ embedded: true, section: config\.section \}\)/);
 assert.match(source, /openMembershipView\?\.\(\{ embedded: true \}\)/);
 assert.match(source, /openAiCoach\?\.\(\{ embedded: true \}\)/);
-assert.match(source, /ProfileWizard\?\.open\?\.\(\{ mode: "edit", embedded: true \}\)/);
+assert.match(source, /ProfileWizard\?\.open\?\.\(\{ mode: "training", embedded: true \}\)/);
+assert.match(source, /label: "TræningsWizard"/);
+assert.doesNotMatch(source, /\{ id: "export"|\{ id: "privacy"/, "data and privacy actions live only in Indstillinger");
+assert.doesNotMatch(source, /\{ id: "profile"/, "Profil og konto is an Indstillinger submenu, not a main menu item");
+assert.match(profileWizardSource, /function displayedStep\(\)/);
+assert.match(profileWizardSource, /state\?\.mode === "training" \? 6 : 7/);
 assert.match(source, /root\.querySelector\?\.\("\.wizard-overlay"\)\?\.setAttribute/);
 assert.match(source, /renderInlineInfoAction\(actionId, root\)/);
 assert.match(profile, /options\.embedded !== true/);
@@ -243,20 +255,20 @@ assert.match(css, /@media \(min-width: 760px\)/);
 assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
 
 for (const asset of ["modern-dashboard-ui.css", "modern-dashboard-ui.js"])
-  assert.match(html, new RegExp(`${asset.replace(".", "\\.")}\\?v=20260809-direct-navigation1`));
+  assert.match(html, new RegExp(`${asset.replace(".", "\\.")}\\?v=20260810-user-menu1`));
 assert.match(html, /work4it-icons\.js\?v=20260722-icon-system1/);
-assert.match(html, /profile-account\.js\?v=20260809-direct-navigation1/);
-assert.match(html, /profile-wizard\.js\?v=20260809-direct-navigation1/);
+assert.match(html, /profile-account\.js\?v=20260810-user-menu1/);
+assert.match(html, /profile-wizard\.js\?v=20260810-user-menu1/);
 assert.match(html, /membership\.js\?v=20260809-direct-navigation1/);
 assert.match(html, /workit-menu-manager\.js\?v=20260809-strength-all1/);
 assert.match(html, /auth-gate\.js\?v=20260809-strength-all1/);
-assert.match(html, /service-worker\.js\?v=20260810-privacy-link1/);
-assert.match(serviceWorker, /work4it-shell-v146-privacy-link1/);
+assert.match(html, /service-worker\.js\?v=20260810-user-menu1/);
+assert.match(serviceWorker, /work4it-shell-v147-user-menu1/);
 for (const asset of ["modern-dashboard-ui.css", "modern-dashboard-ui.js"])
-  assert.match(serviceWorker, new RegExp(`${asset.replace(".", "\\.")}\\?v=20260809-direct-navigation1`));
+  assert.match(serviceWorker, new RegExp(`${asset.replace(".", "\\.")}\\?v=20260810-user-menu1`));
 assert.match(serviceWorker, /work4it-icons\.js\?v=20260722-icon-system1/);
-assert.match(serviceWorker, /profile-account\.js\?v=20260809-direct-navigation1/);
-assert.match(serviceWorker, /profile-wizard\.js\?v=20260809-direct-navigation1/);
+assert.match(serviceWorker, /profile-account\.js\?v=20260810-user-menu1/);
+assert.match(serviceWorker, /profile-wizard\.js\?v=20260810-user-menu1/);
 assert.match(serviceWorker, /membership\.js\?v=20260809-direct-navigation1/);
 assert.match(serviceWorker, /workit-menu-manager\.js\?v=20260809-strength-all1/);
 assert.match(serviceWorker, /auth-gate\.js\?v=20260809-strength-all1/);

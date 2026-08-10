@@ -55,7 +55,7 @@
   <link rel="apple-touch-icon" href="Pictures/App%20Ikon%20V1.png">
   <link rel="stylesheet" href="exercise-animation/mannequin.css?v=20260716-mannequin-prototype1">
   <link rel="stylesheet" href="progression.css?v=20260718-progression1">
-  <link rel="stylesheet" href="modern-dashboard-ui.css?v=20260809-direct-navigation1">
+  <link rel="stylesheet" href="modern-dashboard-ui.css?v=20260810-user-menu1">
   <title>Work4it</title>
   <style>
     :root {
@@ -3020,15 +3020,15 @@
         <button class="profile-account-back" type="button" data-work4it-leading-icon="back" onclick="closeProfileAccountView()" aria-label="Tilbage til Bruger">Tilbage</button>
         <div class="profile-account-title-group"><img class="profile-account-logo" src="Pictures/App%20Logo%20v1.png" alt="Work4it" width="1536" height="1024" loading="lazy" decoding="async"><div class="profile-account-title" id="profileAccountViewTitle" tabindex="-1">Profil og konto</div></div>
       </div>
-      <p class="profile-account-intro">Administrér personlige oplysninger, træningsopsætning, konto og lokale data.</p>
+      <p class="profile-account-intro">Administrér personlige oplysninger, konto og sikkerhed.</p>
 
       <nav class="profile-account-tabs" id="profileAccountTabs" role="tablist" aria-label="Profil og konto" onkeydown="handleProfileAccountTabKey(event)">
-        <button class="profile-account-tab modern-tone-cyan" id="profileAccountTabPersonal" type="button" role="tab" data-profile-account-tab="personal" aria-controls="profileSectionPersonal" aria-selected="true" tabindex="0" onclick="selectProfileAccountSection('personal')"><span class="modern-icon" data-work4it-icon="profile" aria-hidden="true"></span><span>Personlige oplysninger</span></button>
+        <button class="profile-account-tab modern-tone-cyan" id="profileAccountTabPersonal" type="button" role="tab" data-profile-account-tab="personal" aria-controls="profileSectionPersonal" aria-selected="true" tabindex="0" onclick="selectProfileAccountSection('personal')"><span class="modern-icon" data-work4it-icon="profile" aria-hidden="true"></span><span>Profil og konto</span></button>
         <button class="profile-account-tab modern-tone-blue" id="profileAccountTabAccount" type="button" role="tab" data-profile-account-tab="account" aria-controls="profileSectionAccount" aria-selected="false" tabindex="-1" onclick="selectProfileAccountSection('account')"><span class="modern-icon" data-work4it-icon="user" aria-hidden="true"></span><span>Konto og login</span></button>
         <button class="profile-account-tab modern-tone-red" id="profileAccountTabSecurity" type="button" role="tab" data-profile-account-tab="security" aria-controls="profileSectionSecurity" aria-selected="false" tabindex="-1" onclick="selectProfileAccountSection('security')"><span class="modern-icon" data-work4it-icon="privacy" aria-hidden="true"></span><span>Sikkerhed</span></button>
         <button class="profile-account-tab modern-tone-orange" id="profileAccountTabTraining" type="button" role="tab" data-profile-account-tab="training" aria-controls="profileSectionTraining" aria-selected="false" tabindex="-1" onclick="selectProfileAccountSection('training')"><span class="modern-icon" data-work4it-icon="target" aria-hidden="true"></span><span>Træningsopsætning</span></button>
         <button class="profile-account-tab modern-tone-green" id="profileAccountTabPrivacy" type="button" role="tab" data-profile-account-tab="privacy" aria-controls="profileSectionPrivacy" aria-selected="false" tabindex="-1" onclick="selectProfileAccountSection('privacy')"><span class="modern-icon" data-work4it-icon="cloud" aria-hidden="true"></span><span>Data og privatliv</span></button>
-        <button class="profile-account-tab modern-tone-violet" id="profileAccountTabSettings" type="button" role="tab" data-profile-account-tab="settings" aria-controls="profileSectionSettings" aria-selected="false" tabindex="-1" onclick="selectProfileAccountSection('settings')"><span class="modern-icon" data-work4it-icon="settings" aria-hidden="true"></span><span>Tema/Indstillinger</span></button>
+        <button class="profile-account-tab modern-tone-violet" id="profileAccountTabSettings" type="button" role="tab" data-profile-account-tab="settings" aria-controls="themeSettingsSection" aria-selected="false" tabindex="-1" onclick="selectProfileAccountSection('settings')"><span class="modern-icon" data-work4it-icon="settings" aria-hidden="true"></span><span>Temaindstillinger</span></button>
       </nav>
 
       <div class="profile-account-columns">
@@ -3064,7 +3064,7 @@
           </section>
 
           <section class="profile-account-section" id="profileSectionPrivacy" data-profile-account-section="privacy" role="tabpanel" aria-labelledby="profileAccountTabPrivacy" hidden>
-            <h2>Data & privatliv</h2>
+            <h2>Data og privatliv</h2>
             <p class="profile-section-copy">Dine data gemmes i Firebase, når du er logget ind, og localStorage bruges som lokal cache/fallback.</p>
             <div class="profile-account-actions">
               <button class="profile-account-button" type="button" onclick="exportProfileData()">Eksportér mine data</button>
@@ -3118,6 +3118,10 @@
               </span>
             </label>
             <div class="theme-save-feedback" id="autoPauseFeedback" aria-live="polite"></div>
+            <section class="settings-app-display" aria-labelledby="settingsAppDisplayTitle">
+              <h2 id="settingsAppDisplayTitle">App-visning</h2>
+              <p class="profile-section-copy">Work4its Modern Dashboard er den aktive app-visning. Tema og generelle app-indstillinger styres her.</p>
+            </section>
           </section>
         </div>
 
@@ -3143,6 +3147,10 @@
             <label class="profile-form-field">Muskelmasse (kg)<input id="profileMuscleMass" type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" min="0" step="0.1" oninput="sanitizeKgInput(this)"></label>
             <label class="profile-form-field wide">Personligt mål<input id="profilePersonalGoal" placeholder="F.eks. Ned på 85 kg eller Bænkpres 100 kg"></label>
           </div>
+          <div class="profile-account-actions">
+            <button class="profile-account-button primary" type="submit">Gem personlige oplysninger</button>
+          </div>
+          <div class="profile-save-feedback" id="profileSaveFeedback" aria-live="polite"></div>
         </section>
 
         <section class="profile-account-section" id="profileSectionTraining" data-profile-account-section="training" role="tabpanel" aria-labelledby="profileAccountTabTraining" hidden>
@@ -3215,11 +3223,6 @@
             </label>
           </div>
           <div class="profile-focus-grid" id="profileFocusAreas"></div>
-          <div class="profile-account-actions">
-            <button class="profile-account-button primary" type="submit">Gem profil</button>
-            <button class="profile-account-button" type="button" onclick="openProfileWizardAgain()">Åbn profil-wizard igen</button>
-          </div>
-          <div class="profile-save-feedback" id="profileSaveFeedback" aria-live="polite"></div>
         </section>
           </form>
         </div>
@@ -3884,7 +3887,7 @@
 
     function openProfileWizardFromMenu() {
       window.Work4itModernDashboard?.closeToolPanel?.();
-      window.ProfileWizard?.open?.({ mode: "edit" });
+      window.ProfileWizard?.open?.({ mode: "training" });
     }
 
     function exportDataFromMenu() {
@@ -10983,9 +10986,9 @@
   <script src="auth-gate.js?v=20260809-strength-all1"></script>
   <script src="theme-service.js?v=20260627-theme1"></script>
   <script src="work4it-icons.js?v=20260722-icon-system1"></script>
-  <script src="modern-dashboard-ui.js?v=20260809-direct-navigation1"></script>
-  <script src="profile-account.js?v=20260809-direct-navigation1"></script>
-  <script src="profile-wizard.js?v=20260809-direct-navigation1"></script>
+  <script src="modern-dashboard-ui.js?v=20260810-user-menu1"></script>
+  <script src="profile-account.js?v=20260810-user-menu1"></script>
+  <script src="profile-wizard.js?v=20260810-user-menu1"></script>
   <script src="daily-start-wizard.js?v=20260615-window1"></script>
   <script src="wizard-controller.js?v=20260622-fixed-routing1"></script>
   <script src="stripe-config.js?v=20260711-permanent-admin1"></script>
@@ -10999,7 +11002,7 @@
   <script>
     if ("serviceWorker" in navigator && window.isSecureContext) {
       window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./service-worker.js?v=20260810-privacy-link1").catch(error => {
+        navigator.serviceWorker.register("./service-worker.js?v=20260810-user-menu1").catch(error => {
           console.warn("Work4it kunne ikke aktivere offline app-shell.", error);
         });
       });

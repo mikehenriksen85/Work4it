@@ -5,11 +5,10 @@
     user: {
       label: "Bruger",
       actions: [
-        { id: "profile", icon: "profile", tone: "cyan", label: "Profil og konto", handler: "openProfileSetup" },
-        { id: "training-profile", icon: "target", tone: "orange", label: "Træningsprofil", handler: "openProfileWizardFromMenu" },
-        { id: "membership", icon: "membership", tone: "amber", label: "Medlemskab", handler: "openMembershipView" },
+        { id: "settings", icon: "settings", tone: "blue", label: "Indstillinger", handler: "openModernSettings" },
         { id: "ai-coach", icon: "coach", tone: "violet", label: "AI Coach", handler: "openAiCoach" },
-        { id: "settings", icon: "settings", tone: "blue", label: "Indstillinger", handler: "openModernSettings" }
+        { id: "membership", icon: "membership", tone: "amber", label: "Medlemskab", handler: "openMembershipView" },
+        { id: "training-profile", icon: "target", tone: "orange", label: "TræningsWizard", handler: "openProfileWizardFromMenu" }
       ]
     },
     training: {
@@ -30,9 +29,7 @@
       label: "Mere",
       actions: [
         { id: "trash", icon: "trash", tone: "red", label: "Papirkurv", description: "Gendan eller fjern slettede programmer.", handler: "openModernTrash", cta: "Åbn papirkurv" },
-        { id: "export", icon: "export", tone: "cyan", label: "Eksportér data", description: "Hent en kopi af dine Work4it-data.", handler: "exportDataFromMenu", cta: "Eksportér" },
         { id: "help", icon: "help", tone: "blue", label: "Hjælp og om appen", description: "Få hjælp og læs om Work4it.", handler: "openHelpAboutDialog", cta: "Åbn hjælp" },
-        { id: "privacy", icon: "privacy", tone: "green", label: "Privatliv og GDPR", description: "Læs Work4its privatlivsinformation.", href: "https://work-4it.dk/", cta: "Læs mere" },
         { id: "feedback", icon: "feedback", tone: "violet", label: "Feedback", description: "Send fejl, forslag eller forbedringsønsker.", href: "https://docs.google.com/forms/d/e/1FAIpQLScIi1YE2x3pzRQI7dmztC3kWgjysDFkcUfKJtZXcOzAeIV7Tg/viewform", cta: "Send feedback" },
         { id: "logout", icon: "logout", tone: "red", label: "Log ud", description: "Afslut den aktive Work4it-session.", handler: "logoutProfileAccount", cta: "Log ud", destructive: true }
       ]
@@ -45,15 +42,12 @@
   let embeddedView = null;
   const TRAINING_DASHBOARD_SCROLL_KEY = "work4it:trainingDashboardScrollPosition";
   const INLINE_ACTIONS = Object.freeze({
-    profile: { rootId: "profileAccountView", type: "profile", section: "personal" },
     "training-profile": { rootId: "profile-wizard-root", type: "wizard" },
     membership: { rootId: "membershipView", type: "membership" },
     "ai-coach": { rootId: "aiCoachPanel", type: "ai-coach" },
-    settings: { rootId: "profileAccountView", type: "profile", section: "settings" },
+    settings: { rootId: "profileAccountView", type: "profile", section: "personal" },
     trash: { rootId: "trashDropdown", type: "trash" },
-    export: { rootId: "modernInlineActionContent", type: "info" },
     help: { rootId: "modernInlineActionContent", type: "info" },
-    privacy: { rootId: "modernInlineActionContent", type: "info" },
     feedback: { rootId: "modernInlineActionContent", type: "info" },
     logout: { rootId: "modernInlineActionContent", type: "info" }
   });
@@ -221,6 +215,7 @@
       root.replaceChildren();
     }
     root.classList.remove("modern-inline-view");
+    delete root.dataset.modernEmbeddedAction;
     if (placeholder?.parentNode) placeholder.parentNode.insertBefore(root, placeholder);
     placeholder?.remove?.();
     embeddedView = null;
@@ -238,7 +233,6 @@
       </article>`).join("");
     const views = {
       help: `<h2>${escapeHtml(help.title || "Hjælp og om Work4it")}</h2><p>${escapeHtml(help.intro || "Find hjælp til Work4its funktioner.")}</p><div class="modern-inline-info-list">${helpFeatures}</div>`,
-      privacy: `<h2>Privatliv og GDPR</h2><p>Work4it gemmer profil- og træningsdata i Firebase/Firestore, når du er logget ind, og bruger lokal lagring som cache og offline-backup.</p><p>Du kan eksportere data, rydde lokal cache eller slette konto og cloud-data under Profil og konto.</p><button class="modern-inline-primary" type="button" data-modern-open="privacy">Læs privatlivspolitikken på Work-4it.dk</button>`,
       feedback: `<h2>Feedback</h2><p>Send fejl, forslag eller forbedringsønsker til Work4it. Feedbackformularen åbnes først, når du vælger knappen nedenfor.</p><button class="modern-inline-primary" type="button" data-modern-open="feedback">Åbn feedbackformular</button>`,
       export: `<h2>Eksportér data</h2><p>Hent en kopi af dine Work4it-data fra denne konto og enhed.</p><button class="modern-inline-primary" type="button" data-modern-open="export">Eksportér mine data</button>`,
       logout: `<h2>Log ud</h2><p>Afslut den aktive Work4it-session på denne enhed. Dine gemte cloud-data bevares.</p><button class="modern-inline-primary destructive" type="button" data-modern-open="logout">Log ud</button>`
@@ -250,7 +244,7 @@
   function mountInlineAction(actionId) {
     const config = INLINE_ACTIONS[actionId];
     const panel = byId("modernFeaturePanel");
-    if (config?.type === "wizard" && !byId(config.rootId)) window.ProfileWizard?.open?.({ mode: "edit", embedded: true });
+    if (config?.type === "wizard" && !byId(config.rootId)) window.ProfileWizard?.open?.({ mode: "training", embedded: true });
     const root = config ? byId(config.rootId) : null;
     if (!config || !panel || !root) return false;
     if (embeddedView?.root !== root || embeddedView?.actionId !== actionId) {
@@ -259,6 +253,7 @@
       root.parentNode?.insertBefore(placeholder, root);
       panel.replaceChildren(root);
       root.classList.add("modern-inline-view");
+      root.dataset.modernEmbeddedAction = actionId;
       embeddedView = { actionId, root, placeholder, type: config.type };
     }
     panel.hidden = false;
@@ -594,7 +589,7 @@
 
   function openModernSettings() {
     if (!invokeHandler("openProfileSetup")) return false;
-    window.setTimeout(() => window.selectProfileAccountSection?.("settings", { focus: true }), 80);
+    window.setTimeout(() => window.selectProfileAccountSection?.("personal", { focus: true }), 80);
     return true;
   }
 
