@@ -29,8 +29,7 @@ for (const id of [
   "savedProgramsViewList", "savedProgramsViewEmpty", "savedProgramsViewCount",
   "programCreationView", "programCreationViewTitle", "programType", "automaticExerciseCount",
   "countPicker", "cardioGoalPicker", "calisthenicsTemplatePicker",
-  "calisthenicsWorkoutView", "calisthenicsWorkoutViewTitle", "calisthenicsWorkoutEditorHost",
-  "cardioWorkoutView", "cardioWorkoutViewTitle", "cardioWorkoutEditorHost",
+  "workoutView", "workoutViewTitle", "workoutEditorDetails",
   "profileAccountTabs", "profileAccountViewTitle",
   "profileSectionPersonal", "profileSectionAccount", "profileSectionSecurity",
   "profileSectionTraining", "themeSettingsSection"
@@ -149,7 +148,7 @@ assert.match(source, /function rememberTrainingDashboardScrollPosition\(\)/);
 assert.match(source, /window\.scrollTo\(\{ top: returnPosition, behavior: "auto" \}\)/);
 assert.match(source, /function renderSavedProgramsView\(/);
 assert.match(source, /data-saved-program-id=/);
-assert.match(source, /window\.loadSavedProgram\?\.\(id\)/);
+assert.match(source, /window\.openWorkout\?\.\(id\)/);
 const savedProgramsHandler = source.match(/function openModernSavedPrograms\(options = \{\}\) \{([\s\S]*?)\n  \}/)?.[1] || "";
 assert.doesNotMatch(savedProgramsHandler, /scrollIntoView/, "Mine programmer opens as a view instead of scrolling the dashboard");
 assert.match(savedProgramsHandler, /restoreScrollState/);
@@ -162,7 +161,7 @@ assert.match(html, />Vælg et gemt træningspas</);
 assert.match(html, />Gemte programmer</);
 assert.match(source, />Åbn og redigér</);
 assert.match(html, /savedProgramsView[\s\S]*?tabindex="-1"/);
-assert.match(html, /\["profile", "membership", "progress", "calorie", "dashboard", "today", "program", "session", "saved-programs", "create-program", "calisthenics-workout", "cardio-workout"\]/);
+assert.match(html, /\["profile", "membership", "progress", "calorie", "dashboard", "today", "program", "workout", "session", "saved-programs", "create-program"\]/);
 assert.match(html, /view === "saved-programs"[\s\S]*?openModernSavedPrograms/);
 assert.match(authGate, /"saved-programs"/);
 assert.match(menuManager, /\.saved-programs-view\.open/);
@@ -181,27 +180,17 @@ assert.match(authGate, /"create-program"/);
 assert.match(menuManager, /\.program-creation-view\.open/);
 assert.match(source, /function openModernCalisthenicsWorkout\(options = \{\}\)/);
 assert.match(source, /function closeCalisthenicsWorkoutView\(options = \{\}\)/);
-assert.match(source, /restoreWorkoutEditorHome\(\)/);
 const calisthenicsViewHandler = source.match(/function openModernCalisthenicsWorkout\(options = \{\}\) \{([\s\S]*?)\n  \}/)?.[1] || "";
 assert.doesNotMatch(calisthenicsViewHandler, /openSurface|openPanel/, "Calisthenics view must remain open while the exercise picker uses the transient menu manager");
-assert.match(html, /class="calisthenics-workout-view"/);
-assert.match(html, /id="calisthenicsWorkoutViewTitle" tabindex="-1"/);
-assert.match(html, /id="calisthenicsWorkoutEditorHost"/);
 assert.match(html, /id="workoutEditorHome" hidden/);
-assert.match(html, /view === "calisthenics-workout"[\s\S]*?initialize: false/);
-assert.match(authGate, /"calisthenics-workout"/);
-assert.match(menuManager, /\.calisthenics-workout-view\.open/);
+assert.match(source, /window\.newWorkout\?\.\("calisthenics", "", \{ source: "calisthenics" \}\)/);
+assert.match(source, /window\.openWorkout\?\.\("", \{ rememberScroll: false \}\)/);
 assert.match(source, /function openModernCardioWorkout\(options = \{\}\)/);
 assert.match(source, /function closeCardioWorkoutView\(options = \{\}\)/);
 const cardioViewHandler = source.match(/function openModernCardioWorkout\(options = \{\}\) \{([\s\S]*?)\n  \}/)?.[1] || "";
 assert.doesNotMatch(cardioViewHandler, /openSurface|openPanel/, "Cardio view must remain open while the exercise picker uses the transient menu manager");
-assert.match(html, /class="cardio-workout-view"/);
-assert.match(html, /id="cardioWorkoutViewTitle" tabindex="-1"/);
-assert.match(html, /id="cardioWorkoutEditorHost"/);
-assert.match(html, /view === "cardio-workout"[\s\S]*?initialize: false/);
-assert.match(source, /window\.newWorkout\?\.\("cardio", "", \{ view: "cardio-workout" \}\)/);
-assert.match(authGate, /"cardio-workout"/);
-assert.match(menuManager, /\.cardio-workout-view\.open/);
+assert.match(source, /window\.newWorkout\?\.\("cardio", "", \{ source: "cardio" \}\)/);
+assert.doesNotMatch(`${html}\n${source}\n${css}`, /moveWorkoutEditor|restoreWorkoutEditorHome|calisthenics-workout-view|cardio-workout-view/);
 assert.match(source, /function openModernTrash\(/);
 assert.match(source, /\["ArrowLeft", "ArrowRight", "Home", "End"\]/, "Horizontal tabs support keyboard navigation");
 assert.match(source, /class="modern-mini-card/);
@@ -249,29 +238,29 @@ assert.match(css, /\.work4it-icon-svg/);
 assert.match(css, /--modern-icon-color/);
 assert.match(css, /--modern-touch: 48px/);
 assert.match(css, /min-height: var\(--modern-touch\)/);
-assert.match(css, /body\[data-workout-view="session"\] \.modern-bottom-nav/);
+assert.match(css, /body\[data-app-screen="workout"\] \.modern-bottom-nav/);
 assert.match(css, /@media \(max-width: 560px\)/);
 assert.match(css, /@media \(min-width: 760px\)/);
 assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
 
 for (const asset of ["modern-dashboard-ui.css", "modern-dashboard-ui.js"])
-  assert.match(html, new RegExp(`${asset.replace(".", "\\.")}\\?v=20260810-user-menu1`));
+  assert.match(html, new RegExp(`${asset.replace(".", "\\.")}\\?v=20260810-workout-view1`));
 assert.match(html, /work4it-icons\.js\?v=20260722-icon-system1/);
 assert.match(html, /profile-account\.js\?v=20260810-user-menu1/);
 assert.match(html, /profile-wizard\.js\?v=20260810-user-menu1/);
 assert.match(html, /membership\.js\?v=20260809-direct-navigation1/);
-assert.match(html, /workit-menu-manager\.js\?v=20260809-strength-all1/);
-assert.match(html, /auth-gate\.js\?v=20260809-strength-all1/);
+assert.match(html, /workit-menu-manager\.js\?v=20260810-workout-view1/);
+assert.match(html, /auth-gate\.js\?v=20260810-workout-view1/);
 assert.match(html, /service-worker\.js\?v=20260810-user-menu1/);
-assert.match(serviceWorker, /work4it-shell-v147-user-menu1/);
+assert.match(serviceWorker, /work4it-shell-v148-workout-view1/);
 for (const asset of ["modern-dashboard-ui.css", "modern-dashboard-ui.js"])
-  assert.match(serviceWorker, new RegExp(`${asset.replace(".", "\\.")}\\?v=20260810-user-menu1`));
+  assert.match(serviceWorker, new RegExp(`${asset.replace(".", "\\.")}\\?v=20260810-workout-view1`));
 assert.match(serviceWorker, /work4it-icons\.js\?v=20260722-icon-system1/);
 assert.match(serviceWorker, /profile-account\.js\?v=20260810-user-menu1/);
 assert.match(serviceWorker, /profile-wizard\.js\?v=20260810-user-menu1/);
 assert.match(serviceWorker, /membership\.js\?v=20260809-direct-navigation1/);
-assert.match(serviceWorker, /workit-menu-manager\.js\?v=20260809-strength-all1/);
-assert.match(serviceWorker, /auth-gate\.js\?v=20260809-strength-all1/);
+assert.match(serviceWorker, /workit-menu-manager\.js\?v=20260810-workout-view1/);
+assert.match(serviceWorker, /auth-gate\.js\?v=20260810-workout-view1/);
 
 const listeners = new Map();
 const window = {
@@ -340,7 +329,7 @@ const savedViewElements = Object.fromEntries([
 ].map(id => [id, fakeElement(id)]));
 savedViewElements.programGeneratorAccess.hidden = true;
 const savedViewEvents = new Map();
-const savedViewCalls = { restoredScroll: null, savedView: "", loadedProgram: "", editorOpened: 0, surface: "" };
+const savedViewCalls = { restoredScroll: null, savedView: "", openedWorkout: "", surface: "" };
 const savedViewWindow = {
   scrollY: 427,
   addEventListener(type, handler) { savedViewEvents.set(type, handler); },
@@ -350,8 +339,7 @@ const savedViewWindow = {
     this.scrollY = options.top;
   },
   saveLastActiveView(view) { savedViewCalls.savedView = view; },
-  loadSavedProgram(id) { savedViewCalls.loadedProgram = id; },
-  openWorkoutEditor() { savedViewCalls.editorOpened += 1; },
+  openWorkout(id) { savedViewCalls.openedWorkout = id; return true; },
   Work4itDashboardRuntime: {
     getSnapshot: () => ({
       loading: false,
@@ -420,8 +408,7 @@ assert.equal(savedViewWindow.closeSavedProgramsView(), true);
 assert.equal(savedViewCalls.restoredScroll, 427, "Refresh/app-resume restores the prior Training scroll position");
 savedViewWindow.openModernSavedPrograms();
 assert.equal(savedViewWindow.openModernSavedProgram("program-1"), true);
-assert.equal(savedViewCalls.loadedProgram, "program-1");
-assert.equal(savedViewCalls.editorOpened, 1);
+assert.equal(savedViewCalls.openedWorkout, "program-1");
 assert.equal(savedViewElements.savedProgramsView.classList.contains("open"), false);
 
 console.log("Permanent Modern Dashboard UI migration, navigation and runtime contracts OK");

@@ -468,77 +468,6 @@ body {
 
 .program-creation-view.open { display: block; }
 
-.calisthenics-workout-view,
-.cardio-workout-view {
-  position: fixed;
-  inset: calc(60px + env(safe-area-inset-top, 0px)) 0 0;
-  z-index: 1400;
-  display: none;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  padding: clamp(14px, 3vw, 28px);
-  padding-bottom: calc(32px + env(safe-area-inset-bottom, 0px));
-  background: var(--bg);
-  -webkit-overflow-scrolling: touch;
-}
-
-.calisthenics-workout-view.open,
-.cardio-workout-view.open { display: block; }
-
-.calisthenics-workout-view-shell,
-.cardio-workout-view-shell {
-  width: min(980px, 100%);
-  min-height: 100%;
-  display: grid;
-  align-content: start;
-  gap: var(--modern-space-3);
-  margin: 0 auto;
-}
-
-.calisthenics-workout-view-head,
-.cardio-workout-view-head {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: center;
-  gap: var(--modern-space-3);
-  padding-bottom: var(--modern-space-2);
-  border-bottom: 1px solid var(--border);
-}
-
-.calisthenics-workout-view-head h1,
-.cardio-workout-view-head h1 {
-  margin: 0;
-  color: var(--text-primary);
-  font-size: clamp(1.5rem, 5vw, 2rem);
-  line-height: 1.15;
-}
-
-.calisthenics-workout-eyebrow,
-.cardio-workout-eyebrow {
-  display: block;
-  margin-bottom: 2px;
-  color: var(--text-secondary);
-  font-size: var(--font-size-small);
-}
-
-.calisthenics-workout-back,
-.cardio-workout-back {
-  min-height: var(--modern-touch);
-  padding: 10px 14px;
-  border: 1px solid var(--border);
-  border-radius: var(--modern-radius-sm);
-  background: var(--input);
-  color: var(--text-primary);
-  cursor: pointer;
-  font: inherit;
-  font-weight: var(--font-weight-semibold);
-}
-
-.calisthenics-workout-editor-host .workout-editor-details,
-.cardio-workout-editor-host .workout-editor-details { margin: 0; }
-.calisthenics-workout-editor-host .workout-editor-details > summary,
-.cardio-workout-editor-host .workout-editor-details > summary { display: none; }
-
 .program-creation-view-shell {
   width: min(760px, 100%);
   min-height: 100%;
@@ -881,12 +810,6 @@ body {
 }
 
 @media (max-width: 560px) {
-  .calisthenics-workout-view,
-  .cardio-workout-view { padding: 12px; padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }
-  .calisthenics-workout-view-head,
-  .cardio-workout-view-head { gap: 10px; }
-  .calisthenics-workout-back,
-  .cardio-workout-back { padding-inline: 12px; }
   .program-creation-view { padding: 12px; padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }
   .program-creation-view-head { gap: 10px; }
   .program-creation-back { padding-inline: 12px; }
@@ -907,6 +830,55 @@ body {
   .profile-account-view .profile-account-section { padding: 14px; }
 }
 
+.workout-view {
+  min-height: 100svh;
+  width: 100%;
+  padding: calc(96px + env(safe-area-inset-top, 0px)) 16px max(28px, env(safe-area-inset-bottom, 0px));
+}
+
+.workout-view[hidden] { display: none !important; }
+.workout-view.open { display: block; }
+
+.workout-view-shell {
+  width: min(860px, 100%);
+  margin: 0 auto;
+}
+
+.workout-view-head {
+  display: flex;
+  align-items: center;
+  gap: var(--modern-space-3);
+  margin-bottom: var(--modern-space-3);
+}
+
+.workout-view-head > div { min-width: 0; }
+.workout-view-eyebrow {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--text-secondary);
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-semibold);
+}
+
+.workout-view-head h1 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: var(--font-size-h1);
+  line-height: var(--line-height-heading);
+}
+
+.workout-view-back {
+  min-height: var(--modern-touch);
+  padding: 10px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--modern-radius-sm);
+  background: var(--input);
+  color: var(--text-primary);
+  font: inherit;
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+}
+
 .workout-editor-details {
   margin-top: 12px;
   padding: 0 14px 16px;
@@ -921,6 +893,13 @@ body {
   display: flex;
   align-items: center;
 }
+
+.workout-view .workout-editor-details {
+  margin: 0;
+  padding-top: 16px;
+}
+
+.workout-view .workout-editor-details > summary { display: none; }
 
 .modern-bottom-nav {
   position: fixed;
@@ -984,10 +963,19 @@ body {
 }
 
 body.auth-locked .modern-bottom-nav,
-body[data-workout-view="session"] .modern-dashboard-ui,
-body[data-workout-view="session"] .modern-bottom-nav { display: none !important; }
+body[data-app-screen="workout"] #programCanvas,
+body[data-app-screen="workout"] .modern-bottom-nav { display: none !important; }
 
-body[data-workout-view="session"] .canvas { padding-bottom: max(20px, env(safe-area-inset-bottom, 0px)); }
+body[data-app-screen="workout"] { overflow-x: hidden; }
+
+@media (max-width: 560px) {
+  .workout-view {
+    padding: calc(88px + env(safe-area-inset-top, 0px)) 10px max(18px, env(safe-area-inset-bottom, 0px));
+  }
+  .workout-view-head { gap: 10px; }
+  .workout-view-back { padding-inline: 12px; }
+  .workout-view .workout-editor-details { padding-inline: 10px; }
+}
 
 .modal-content,
 .profile-account-section,

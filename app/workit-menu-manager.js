@@ -139,8 +139,6 @@
     closeNonAuthWindows() {
       closeActivePanel("auth-route");
       closeActiveSurface("auth-route");
-      window.closeCardioWorkoutView?.({ restoreScroll: false, persist: false, fromManager: true });
-      window.closeCalisthenicsWorkoutView?.({ restoreScroll: false, persist: false, fromManager: true });
       ["savedDropdown", "trashDropdown", "countPicker"].forEach(id => {
         const element = document.getElementById(id);
         if (element) element.style.display = "none";
@@ -148,7 +146,7 @@
       document.getElementById("membershipPopup")?.classList.remove("open");
       document.getElementById("aiCoachPanel")?.classList.remove("open");
       document.body.classList.remove("ai-coach-open");
-      document.querySelectorAll(".progress-view.open, .calorie-view.open, .profile-account-view.open, .membership-view.open, .saved-programs-view.open, .program-creation-view.open, .calisthenics-workout-view.open, .cardio-workout-view.open, .wizard-shell.open").forEach(view => {
+      document.querySelectorAll(".progress-view.open, .calorie-view.open, .profile-account-view.open, .membership-view.open, .saved-programs-view.open, .program-creation-view.open, .wizard-shell.open").forEach(view => {
         view.classList.remove("open");
         view.setAttribute("aria-hidden", "true");
       });

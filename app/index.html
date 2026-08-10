@@ -55,7 +55,7 @@
   <link rel="apple-touch-icon" href="Pictures/App%20Ikon%20V1.png">
   <link rel="stylesheet" href="exercise-animation/mannequin.css?v=20260716-mannequin-prototype1">
   <link rel="stylesheet" href="progression.css?v=20260718-progression1">
-  <link rel="stylesheet" href="modern-dashboard-ui.css?v=20260810-user-menu1">
+  <link rel="stylesheet" href="modern-dashboard-ui.css?v=20260810-workout-view1">
   <title>Work4it</title>
   <style>
     :root {
@@ -2760,7 +2760,7 @@
     <button class="nav-btn" onclick="goHome()">Hovedmenu</button>
     <div class="app-title" aria-label="Work4it"><img class="brand-header-logo" src="Pictures/App%20Logo%20v1.png" alt="Work4it" width="1536" height="1024"><span class="brand-header-mobile"><img class="brand-header-icon" src="Pictures/App%20Ikon%20V1.png" alt="" width="1254" height="1254"><span class="brand-header-text" id="appTitleText">Work4it</span></span></div>
   </header>
-  <script src="workit-menu-manager.js?v=20260809-strength-all1"></script>
+  <script src="workit-menu-manager.js?v=20260810-workout-view1"></script>
 
   <main class="canvas" id="programCanvas">
     <section class="card">
@@ -2791,8 +2791,20 @@
         </section>
         <section class="modern-inline-action-content" id="modernInlineActionContent" hidden></section>
       </section>
+    </section>
+  </main>
+
+  <section class="workout-view" id="workoutView" aria-hidden="true" aria-labelledby="workoutViewTitle" hidden>
+    <div class="workout-view-shell">
+      <header class="workout-view-head">
+        <button class="workout-view-back" type="button" data-work4it-leading-icon="back" onclick="leaveWorkoutView()" aria-label="Tilbage til Træning">Tilbage</button>
+        <div>
+          <span class="workout-view-eyebrow">Træning</span>
+          <h1 id="workoutViewTitle" tabindex="-1">Træningspas</h1>
+        </div>
+      </header>
       <div id="workoutEditorHome" hidden></div>
-      <details class="workout-editor-details" id="workoutEditorDetails">
+      <details class="workout-editor-details" id="workoutEditorDetails" open>
         <summary>Se og redigér træningspas</summary>
         <div class="workout-editor-content">
       <div id="workoutTitle" role="button" tabindex="0" aria-label="Redigér programnavn" title="Tryk for at ændre programnavnet" onclick="beginProgramTitleEdit()" onkeydown="handleProgramTitleKey(event)">Mit nye træningspas</div>
@@ -2859,8 +2871,8 @@
       </div>
         </div>
       </details>
-    </section>
-  </main>
+    </div>
+  </section>
 
   <nav class="modern-bottom-nav" id="modernBottomNav" aria-label="Primær navigation">
     <button class="modern-bottom-tab" type="button" data-modern-category="user" aria-pressed="false"><span class="modern-icon" data-work4it-icon="user" aria-hidden="true"></span><strong>Bruger</strong></button>
@@ -2943,32 +2955,6 @@
           </div>
         </div>
       </section>
-    </div>
-  </section>
-
-  <section class="calisthenics-workout-view" id="calisthenicsWorkoutView" aria-hidden="true" aria-labelledby="calisthenicsWorkoutViewTitle">
-    <div class="calisthenics-workout-view-shell">
-      <header class="calisthenics-workout-view-head">
-        <button class="calisthenics-workout-back" type="button" data-work4it-leading-icon="back" onclick="closeCalisthenicsWorkoutView()" aria-label="Tilbage til Træning">Tilbage</button>
-        <div>
-          <span class="calisthenics-workout-eyebrow">Træning</span>
-          <h1 id="calisthenicsWorkoutViewTitle" tabindex="-1">Opret Calisthenics-træningspas</h1>
-        </div>
-      </header>
-      <div class="calisthenics-workout-editor-host" id="calisthenicsWorkoutEditorHost"></div>
-    </div>
-  </section>
-
-  <section class="cardio-workout-view" id="cardioWorkoutView" aria-hidden="true" aria-labelledby="cardioWorkoutViewTitle">
-    <div class="cardio-workout-view-shell">
-      <header class="cardio-workout-view-head">
-        <button class="cardio-workout-back" type="button" data-work4it-leading-icon="back" onclick="closeCardioWorkoutView()" aria-label="Tilbage til Træning">Tilbage</button>
-        <div>
-          <span class="cardio-workout-eyebrow">Træning</span>
-          <h1 id="cardioWorkoutViewTitle" tabindex="-1">Opret Cardio-træningspas</h1>
-        </div>
-      </header>
-      <div class="cardio-workout-editor-host" id="cardioWorkoutEditorHost"></div>
     </div>
   </section>
 
@@ -3546,6 +3532,7 @@
     let currentSavedProgramId = "";
     let currentProgramSession = null;
     let currentProgramDayIndex = 0;
+    let workoutReturnScrollPosition = 0;
     let currentLanguage = "da";
     let autosaveDebounce = null;
     let dashboardCloudPending = false;
@@ -3554,6 +3541,7 @@
     const pauseTimers = {};
     let activePauseComponentKey = "";
     let pauseAudioContext = null;
+    const WORKOUT_RETURN_SCROLL_KEY = "work4it:workoutReturnScrollPosition";
 
     const translations = {
       da: {
@@ -3840,9 +3828,9 @@
     }
 
     function currentAppView() {
-      if (hasActiveWorkoutSession?.() && currentWorkoutView === "session") return "session";
-      if ($("cardioWorkoutView")?.classList.contains("open")) return "cardio-workout";
-      if ($("calisthenicsWorkoutView")?.classList.contains("open")) return "calisthenics-workout";
+      if ($("workoutView")?.classList.contains("open")) {
+        return hasActiveWorkoutSession?.() && currentWorkoutView === "session" ? "session" : "workout";
+      }
       if ($("programCreationView")?.classList.contains("open")) return "create-program";
       if ($("savedProgramsView")?.classList.contains("open")) return "saved-programs";
       if ($("profileAccountView")?.classList.contains("open")) return "profile";
@@ -3883,6 +3871,106 @@
       } catch {
         return null;
       }
+    }
+
+    function storedWorkoutReturnScrollPosition() {
+      try {
+        const value = Number(sessionStorage.getItem(WORKOUT_RETURN_SCROLL_KEY) || localStorage.getItem(WORKOUT_RETURN_SCROLL_KEY) || 0);
+        return Number.isFinite(value) && value >= 0 ? value : 0;
+      } catch {
+        return 0;
+      }
+    }
+
+    function rememberWorkoutReturnScrollPosition() {
+      workoutReturnScrollPosition = Math.max(0, Number(window.scrollY) || 0);
+      try {
+        sessionStorage.setItem(WORKOUT_RETURN_SCROLL_KEY, String(workoutReturnScrollPosition));
+        localStorage.setItem(WORKOUT_RETURN_SCROLL_KEY, String(workoutReturnScrollPosition));
+      } catch {}
+      return workoutReturnScrollPosition;
+    }
+
+    function setWorkoutScreenActive(active, options = {}) {
+      const workoutView = $("workoutView");
+      const dashboard = $("programCanvas");
+      const bottomNavigation = $("modernBottomNav");
+      if (!workoutView || !dashboard) return false;
+      if (active) {
+        if (!workoutView.classList.contains("open") && options.rememberScroll !== false) rememberWorkoutReturnScrollPosition();
+        dashboard.hidden = true;
+        dashboard.inert = true;
+        dashboard.setAttribute("aria-hidden", "true");
+        if (bottomNavigation) {
+          bottomNavigation.hidden = true;
+          bottomNavigation.inert = true;
+          bottomNavigation.setAttribute("aria-hidden", "true");
+        }
+        workoutView.hidden = false;
+        workoutView.inert = false;
+        workoutView.classList.add("open");
+        workoutView.setAttribute("aria-hidden", "false");
+        document.body.dataset.appScreen = "workout";
+        return true;
+      }
+      workoutView.classList.remove("open");
+      workoutView.hidden = true;
+      workoutView.inert = true;
+      workoutView.setAttribute("aria-hidden", "true");
+      dashboard.hidden = false;
+      dashboard.inert = false;
+      dashboard.setAttribute("aria-hidden", "false");
+      if (bottomNavigation) {
+        bottomNavigation.hidden = false;
+        bottomNavigation.inert = false;
+        bottomNavigation.setAttribute("aria-hidden", "false");
+      }
+      delete document.body.dataset.appScreen;
+      return true;
+    }
+
+    function openWorkout(workoutId = "", options = {}) {
+      const requestedId = String(workoutId || "");
+      if (requestedId && !loadSavedProgram(requestedId, { persist: false, renderDashboard: false })) return false;
+      const mode = options.mode === "session" ? "session" : "program";
+      if (mode === "session" && !hasActiveWorkoutSession()) return false;
+      currentWorkoutView = mode;
+      document.body.dataset.workoutView = mode;
+      if (!setWorkoutScreenActive(true, options)) return false;
+      const editor = $("workoutEditorDetails");
+      if (editor) editor.open = true;
+      const heading = $("workoutViewTitle");
+      if (heading) heading.textContent = mode === "session" ? "Aktiv træning" : "Træningspas";
+      updateWorkoutButtonVisibility();
+      updateWorkoutEditorActionState();
+      if (options.persist !== false) saveLastActiveView(mode === "session" ? "session" : "workout");
+      window.Work4itIcons?.hydrate?.($("workoutView"));
+      if (options.focus !== false) window.requestAnimationFrame(() => heading?.focus?.({ preventScroll: true }));
+      return true;
+    }
+
+    function leaveWorkoutView(options = {}) {
+      if (!$("workoutView")?.classList.contains("open")) return false;
+      if (hasActiveWorkoutSession() && options.allowActive !== true) {
+        closeTrainingWindow();
+        return false;
+      }
+      if (currentWorkoutView === "session") captureActiveSessionFromCanvas();
+      else autoSave();
+      closeExercisePicker?.();
+      closeExerciseActionMenu?.();
+      currentWorkoutView = "program";
+      document.body.dataset.workoutView = "program";
+      setWorkoutScreenActive(false);
+      if (options.persist !== false) saveLastActiveView(options.destination || "program");
+      renderDashboard();
+      if (options.restoreScroll !== false) {
+        const returnPosition = Number.isFinite(workoutReturnScrollPosition)
+          ? workoutReturnScrollPosition
+          : storedWorkoutReturnScrollPosition();
+        window.requestAnimationFrame(() => window.scrollTo({ top: returnPosition, behavior: "auto" }));
+      }
+      return true;
     }
 
     function openProfileWizardFromMenu() {
@@ -4023,20 +4111,16 @@
       return `${window.location.origin}${window.location.pathname.replace(/[^/]*$/, "index.html")}`;
     }
     function goHome() {
-      saveLastActiveView("program");
-      if (currentWorkoutView === "session" && hasActiveWorkoutSession()) {
-        closeTrainingWindow();
+      if ($("workoutView")?.classList.contains("open")) {
+        leaveWorkoutView();
         return;
       }
+      saveLastActiveView("program");
       window.location.href = appUrl();
     }
     function goBackSafe() {
-      if ($("cardioWorkoutView")?.classList.contains("open")) {
-        closeCardioWorkoutView();
-        return;
-      }
-      if ($("calisthenicsWorkoutView")?.classList.contains("open")) {
-        closeCalisthenicsWorkoutView();
+      if ($("workoutView")?.classList.contains("open")) {
+        leaveWorkoutView();
         return;
       }
       if ($("programCreationView")?.classList.contains("open")) {
@@ -4061,10 +4145,6 @@
       }
       if ($("progressView")?.classList.contains("open")) {
         closeProgressView();
-        return;
-      }
-      if (currentWorkoutView === "session" && hasActiveWorkoutSession()) {
-        closeTrainingWindow();
         return;
       }
       window.location.href = appUrl();
@@ -4654,8 +4734,7 @@
     function presentGeneratedWorkout() {
       window.closeProgramCreationView?.({ restoreScroll: false, persist: false });
       window.Work4itModernDashboard?.closeToolPanel?.();
-      renderDashboard();
-      openWorkoutEditor();
+      openWorkout();
       $("autosaveStatus").textContent = "Træningspasset er oprettet og klar til redigering";
     }
 
@@ -4937,9 +5016,7 @@
     }
 
     function openWorkoutEditor() {
-      const details = $("workoutEditorDetails");
-      if (details) details.open = true;
-      window.requestAnimationFrame(() => details?.scrollIntoView?.({ behavior: "smooth", block: "start" }));
+      return openWorkout("", { mode: currentWorkoutView === "session" ? "session" : "program" });
     }
 
     function availablePickerMuscles() {
@@ -6794,14 +6871,13 @@
 
     function showTrainingSession() {
       if (!hasActiveWorkoutSession()) return false;
-      const editor = $("workoutEditorDetails");
-      if (editor) editor.open = true;
       currentWorkoutView = "session";
       document.body.dataset.workoutView = "session";
       activeSessionId = activeWorkoutSession.sessionId;
       sessionStatus = normalizeSessionStatus(activeWorkoutSession.sessionStatus);
       sessionStartedAt = activeWorkoutSession.startedAt || null;
       sessionCompletedAt = activeWorkoutSession.completedAt || null;
+      if (!openWorkout("", { mode: "session", persist: false, focus: false })) return false;
       renderWorkoutState(activeWorkoutSession);
       if (sessionStatus === "in_progress") startWorkoutTimerInterval();
       else stopWorkoutTimerInterval();
@@ -6824,7 +6900,8 @@
         if (sessionStatus === "in_progress") startWorkoutTimerInterval();
       }
       updateWorkoutButtonVisibility();
-      saveLastActiveView("program");
+      if (options.openWorkout !== false) openWorkout("", { mode: "program", persist: false, focus: options.focus !== false });
+      saveLastActiveView(options.openWorkout === false ? "program" : "workout");
       autoSave();
       renderDashboard();
     }
@@ -7424,9 +7501,7 @@
 
     function openDashboardSavedProgram(encodedId) {
       const id = decodeURIComponent(encodedId || "");
-      loadSavedProgram(id);
-      openWorkoutEditor();
-      renderDashboard();
+      return openWorkout(id);
     }
 
     function continueDashboardWorkout() {
@@ -7438,8 +7513,7 @@
 
     function viewDashboardFeaturedProgram() {
       const id = modernDashboardSnapshot().view?.featuredWorkout?.id || "";
-      if (id) loadSavedProgram(id);
-      openWorkoutEditor();
+      return id ? openWorkout(id) : false;
     }
 
     function openSavedProgramsFromDashboard() {
@@ -7454,11 +7528,7 @@
       if (hasActiveWorkoutSession()) return showTrainingSession();
       const programId = modernDashboardSnapshot().view?.featuredWorkout?.id || "";
       if (!programId || !window.Work4itDashboardRuntime?.canStartProgram?.(programId)) return false;
-      if (programId && (currentSavedProgramId !== programId || !slotIds().length)) loadSavedProgram(programId);
-      if (validCanvasExerciseCount() === 0) return updateStartTrainingAvailability();
-      openWorkoutEditor();
-      saveLastActiveView("today");
-      return true;
+      return openWorkout(programId);
     }
 
     // Behold det tidligere globale handlernavn for kompatibilitet med ældre genveje.
@@ -7541,6 +7611,7 @@
       setTrash(trash);
       setPrograms(programs.filter(p => p.id !== currentSavedProgramId));
       resetWorkoutCanvas("Klar til nyt træningspas");
+      leaveWorkoutView({ allowActive: true });
       renderSaved();
       renderTrash();
       alert(`"${program.title}" er flyttet til Papirkurv og kan genskabes i 30 dage.`);
@@ -7558,7 +7629,7 @@
       setTrash(trash.filter(p => p.id !== id));
       renderSaved();
       renderTrash();
-      loadSavedProgram(restored.id);
+      openWorkout(restored.id);
       $("autosaveStatus").textContent = "Træningspas gendannet";
     }
     function deleteProgramPermanently(id) {
@@ -7634,9 +7705,9 @@
       $("autosaveStatus").textContent = "Træningspas kopieret";
       alert("Træningspasset er kopieret og kan deles.");
     }
-    function loadSavedProgram(id) {
+    function loadSavedProgram(id, options = {}) {
       const p = getPrograms().find(x => x.id === id);
-      if (!p) return;
+      if (!p) return false;
       currentProgramSession = window.WorkoutProgramStore.normalizeProgram(p);
       currentSavedProgramId = currentProgramSession.id;
       currentProgramDayIndex = currentProgramSession.activeDayIndex || 0;
@@ -7647,9 +7718,10 @@
       autoSave();
       $("autosaveStatus").textContent = t("readyWorkout");
       updateWorkoutButtonVisibility();
-      renderDashboard();
+      if (options.renderDashboard !== false) renderDashboard();
       $("savedDropdown").style.display = "none";
-      saveLastActiveView("program");
+      if (options.persist !== false) saveLastActiveView("program");
+      return true;
     }
     function resetWorkoutCanvas(status = t("ready")) {
       if (autosaveDebounce) {
@@ -7686,8 +7758,7 @@
       updateWorkoutButtonVisibility();
     }
     function closeViewsForLoginRouting() {
-      window.closeCardioWorkoutView?.({ restoreScroll: false, persist: false });
-      window.closeCalisthenicsWorkoutView?.({ restoreScroll: false, persist: false });
+      setWorkoutScreenActive(false, { restoreScroll: false });
       window.WorkitWindowManager?.closeNonAuthWindows?.();
       $("programCreationView")?.classList.remove("open");
       $("programCreationView")?.setAttribute("aria-hidden", "true");
@@ -7706,23 +7777,16 @@
 
     function restoreSavedAppView() {
       const resume = readAppResumeState();
-      const savedView = resume?.view || window.WorkitViewState?.get?.() || "program";
+      const rawSavedView = resume?.view || window.WorkitViewState?.get?.() || "program";
+      const savedView = ["calisthenics-workout", "cardio-workout"].includes(rawSavedView) ? "workout" : rawSavedView;
       const restoredAutosave = loadAutosave();
-      const view = ["profile", "membership", "progress", "calorie", "dashboard", "today", "program", "session", "saved-programs", "create-program", "calisthenics-workout", "cardio-workout"].includes(savedView)
+      const view = ["profile", "membership", "progress", "calorie", "dashboard", "today", "program", "workout", "session", "saved-programs", "create-program"].includes(savedView)
         ? savedView
         : "program";
 
       if (view === "create-program" && typeof openModernProgramGenerator === "function") {
         openModernProgramGenerator({ restoreScrollState: true });
         return "create-program";
-      }
-      if (view === "calisthenics-workout" && restoredAutosave && typeof openModernCalisthenicsWorkout === "function") {
-        openModernCalisthenicsWorkout({ restoreScrollState: true, initialize: false });
-        return "calisthenics-workout";
-      }
-      if (view === "cardio-workout" && restoredAutosave && typeof openModernCardioWorkout === "function") {
-        openModernCardioWorkout({ restoreScrollState: true, initialize: false });
-        return "cardio-workout";
       }
       if (view === "saved-programs" && typeof openModernSavedPrograms === "function") {
         openModernSavedPrograms({ restoreScrollState: true });
@@ -7750,21 +7814,24 @@
       }
       if (view === "today" && typeof continueDailyWorkout === "function") {
         continueDailyWorkout();
-        saveLastActiveView("today");
         return "today";
+      }
+      if (view === "workout" && restoredAutosave) {
+        showProgramView({ captureSession: false, focus: false });
+        return "workout";
       }
       if (!restoredAutosave) {
         resetWorkoutCanvas("Klar til ny træning");
         setExercisePickerContext("Alle");
-      } else if (currentWorkoutView === "session" && hasActiveWorkoutSession()) {
+      } else if (view === "session" && hasActiveWorkoutSession()) {
         showTrainingSession();
         saveLastActiveView("session");
         return "active";
-      } else {
-        showProgramView({ captureSession: false });
       }
+      setWorkoutScreenActive(false, { restoreScroll: false });
       saveLastActiveView("program");
-      return restoredAutosave ? "program" : "empty";
+      renderDashboard();
+      return restoredAutosave ? "dashboard" : "empty";
     }
 
     function routeAfterLogin() {
@@ -7785,8 +7852,12 @@
 
     window.WorkitWorkoutRouting = {
       routeAfterLogin,
-      hasActiveWorkout: () => Boolean(activeWorkoutAutosave())
+      hasActiveWorkout: () => Boolean(activeWorkoutAutosave()),
+      openWorkout,
+      leaveWorkoutView
     };
+    window.openWorkout = openWorkout;
+    window.leaveWorkoutView = leaveWorkoutView;
     function newWorkout(type = "strength", strengthCategory = "", options = {}) {
       if (hasActiveWorkoutSession()) {
         alert("Der er allerede en aktiv træning. Genoptag eller afslut den, før du opretter et nyt træningspas.");
@@ -7805,8 +7876,7 @@
         if (blankStrengthCategoryFlowActive) setStrengthExercisePickerContext(strengthCategory);
         else setExercisePickerContext("Alle");
       }
-      openWorkoutEditor();
-      renderDashboard();
+      openWorkout();
       window.Work4itModernDashboard?.closeToolPanel?.();
       window.requestAnimationFrame(() => {
         const muscles = availablePickerMuscles();
@@ -7814,7 +7884,7 @@
         renderMuscleMenu();
         openExercisePickerMenu();
       });
-      saveLastActiveView(options.view || "program");
+      saveLastActiveView("workout");
     }
 
     function toggleWorkoutTimer() {
@@ -7842,7 +7912,7 @@
 
     function closeTrainingWindow() {
       if (!hasActiveWorkoutSession()) {
-        showProgramView();
+        leaveWorkoutView({ allowActive: true });
         return;
       }
       $("modalTitle").textContent = "Træningen er stadig i gang";
@@ -7860,7 +7930,8 @@
     function minimizeWorkoutSession() {
       closeModal();
       captureActiveSessionFromCanvas();
-      showProgramView();
+      showProgramView({ captureSession: false, openWorkout: false });
+      leaveWorkoutView({ allowActive: true });
       $("autosaveStatus").textContent = "Træningen er minimeret og fortsætter";
     }
 
@@ -8053,7 +8124,8 @@
         if (sessionChanged && confirm("Vil du også gemme disse ændringer i selve programmet?")) applySessionChangesToProgram(finishedSession);
         clearActiveWorkoutAfterFinish();
         workoutCompleteSound();
-        showProgramView({ captureSession: false });
+        showProgramView({ captureSession: false, openWorkout: false });
+        leaveWorkoutView({ allowActive: true });
         updateWorkoutButtonVisibility();
         $("autosaveStatus").textContent = "Sidste træning afsluttet og gemt";
         window.FirestoreDataService?.syncAllLocalData?.().catch(error => {
@@ -10481,17 +10553,12 @@
       }
       if (currentProgramSession?.days?.length || document.querySelectorAll(".exercise").length) {
         $("autosaveStatus").textContent = "Seneste aktive træningspas er klar";
-        openWorkoutEditor();
-        saveLastActiveView("today");
-        return true;
+        return openWorkout();
       }
       const programId = preferredDailyProgramId();
       if (programId) {
-        loadSavedProgram(programId);
         $("autosaveStatus").textContent = "Seneste aktive træningspas er klar";
-        openWorkoutEditor();
-        saveLastActiveView("today");
-        return true;
+        return openWorkout(programId);
       }
       $("autosaveStatus").textContent = "Opret eller gem dit første træningspas";
       return false;
@@ -10810,7 +10877,7 @@
       }
       renderSaved();
       closeModal();
-      loadSavedProgram(id);
+      openWorkout(id);
       $("autosaveStatus").textContent = window.FirestoreDataService?.isCloudPrimary?.()
         ? "Importeret og sendt til Cloud"
         : "Importeret og gemt lokalt";
@@ -10983,10 +11050,10 @@
   <script src="ai-copilot-actions.js?v=20260713-ai-coach1"></script>
   <script src="help-content-config.js?v=20260628-help1"></script>
   <script src="password-visibility.js?v=20260621-password-toggle1"></script>
-  <script src="auth-gate.js?v=20260809-strength-all1"></script>
+  <script src="auth-gate.js?v=20260810-workout-view1"></script>
   <script src="theme-service.js?v=20260627-theme1"></script>
   <script src="work4it-icons.js?v=20260722-icon-system1"></script>
-  <script src="modern-dashboard-ui.js?v=20260810-user-menu1"></script>
+  <script src="modern-dashboard-ui.js?v=20260810-workout-view1"></script>
   <script src="profile-account.js?v=20260810-user-menu1"></script>
   <script src="profile-wizard.js?v=20260810-user-menu1"></script>
   <script src="daily-start-wizard.js?v=20260615-window1"></script>

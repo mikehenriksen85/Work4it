@@ -66,7 +66,7 @@ function createStore({ user = { uid: "uid-1" }, cloudSave = async () => true } =
   assert.match(html, /profile-account\.js\?v=20260810-user-menu1/);
   assert.match(html, /firestore-cloud-service\.js\?v=20260726-permission-retry1/);
   assert.match(html, /service-worker\.js\?v=20260810-user-menu1/);
-  assert.match(serviceWorker, /work4it-shell-v147-user-menu1/);
+  assert.match(serviceWorker, /work4it-shell-v148-workout-view1/);
 
   const profileSections = ["personal", "account", "security", "training", "privacy", "settings"];
   const panels = profileSections.map(section => ({

@@ -10,6 +10,7 @@
   const SESSION_GRACE_MS = 90 * 60 * 1000;
   const restoreableViews = new Set([
     "program",
+    "workout",
     "session",
     "today",
     "profile",
@@ -18,9 +19,7 @@
     "calorie",
     "dashboard",
     "saved-programs",
-    "create-program",
-    "calisthenics-workout",
-    "cardio-workout"
+    "create-program"
   ]);
   let appReady = false;
   let cloudReady = false;
@@ -45,7 +44,7 @@
     document.getElementById("membershipPopup")?.classList.remove("open");
     const modal = byId("modal");
     if (modal) modal.style.display = "none";
-    ["progressView", "profileAccountView", "membershipView", "calorieView", "savedProgramsView", "programCreationView", "calisthenicsWorkoutView", "cardioWorkoutView"].forEach(id => {
+    ["progressView", "profileAccountView", "membershipView", "calorieView", "savedProgramsView", "programCreationView"].forEach(id => {
       byId(id)?.classList.remove("open");
     });
     const exerciseMenu = byId("muscleMenu");
@@ -64,9 +63,7 @@
       ["progress-view", byId("progressView")],
       ["calorie-view", byId("calorieView")],
       ["saved-programs-view", byId("savedProgramsView")],
-      ["program-creation-view", byId("programCreationView")],
-      ["calisthenics-workout-view", byId("calisthenicsWorkoutView")],
-      ["cardio-workout-view", byId("cardioWorkoutView")]
+      ["program-creation-view", byId("programCreationView")]
     ];
     return candidates.find(([name, element]) => name !== except && isVisible(element))?.[0] || "";
   }
@@ -169,8 +166,19 @@
   }
 
   function setAppInert(locked) {
+    const workoutActive = !locked && document.body.dataset.appScreen === "workout";
     [...document.body.children].forEach(element => {
       if (element.id === "authGate" || element.tagName === "SCRIPT") return;
+      if (workoutActive && ["programCanvas", "modernBottomNav"].includes(element.id)) {
+        element.inert = true;
+        element.setAttribute("aria-hidden", "true");
+        return;
+      }
+      if (workoutActive && element.id === "workoutView") {
+        element.inert = false;
+        element.setAttribute("aria-hidden", "false");
+        return;
+      }
       element.inert = locked;
       element.setAttribute("aria-hidden", String(locked));
     });

@@ -1,4 +1,4 @@
-const CACHE_NAME = "work4it-shell-v147-user-menu1";
+const CACHE_NAME = "work4it-shell-v148-workout-view1";
 const ANIMATION_CACHE_NAME = "work4it-exercise-animations-v1";
 const APP_SHELL = [
   "./",
@@ -13,9 +13,9 @@ const APP_SHELL = [
   "./dashboard-view-model.js?v=20260718-dashboard-buttons1",
   "./workout-heatmap.js?v=20260718-heatmap1",
   "./progression.css?v=20260718-progression1",
-  "./modern-dashboard-ui.css?v=20260810-user-menu1",
+  "./modern-dashboard-ui.css?v=20260810-workout-view1",
   "./work4it-icons.js?v=20260722-icon-system1",
-  "./modern-dashboard-ui.js?v=20260810-user-menu1",
+  "./modern-dashboard-ui.js?v=20260810-workout-view1",
   "./progression-service.js?v=20260718-progression1",
   "./completed-workout-analysis.js?v=20260716-completion-analysis2",
   "./vendor/three/three.module.min.js",
@@ -24,7 +24,7 @@ const APP_SHELL = [
   "./Pictures/App%20Ikon%20V1.png",
   "./Pictures/App%20Logo%20v1.png",
   "./Pictures/Hero%20Logo%20v1.png",
-  "./workit-menu-manager.js?v=20260809-strength-all1",
+  "./workit-menu-manager.js?v=20260810-workout-view1",
   "./storage-scope.js?v=20260621-cloud-primary1",
   "./calorie-estimator.js?v=20260615-cardio1",
   "./training-goal-engine.js?v=20260716-cardio-empty-time1",
@@ -41,7 +41,7 @@ const APP_SHELL = [
   "./ai-request-counter.js?v=20260713-stripe-google-login1",
   "./help-content-config.js?v=20260628-help1",
   "./password-visibility.js?v=20260621-password-toggle1",
-  "./auth-gate.js?v=20260809-strength-all1",
+  "./auth-gate.js?v=20260810-workout-view1",
   "./theme-service.js?v=20260627-theme1",
   "./profile-account.js?v=20260810-user-menu1",
   "./profile-wizard.js?v=20260810-user-menu1",
