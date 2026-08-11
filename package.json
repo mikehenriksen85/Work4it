@@ -4,7 +4,7 @@
   "private": true,
   "description": "Work4it - dansk browserbaseret træningsplanlægger og tracker",
   "scripts": {
-    "test": "npm run test:dashboard && npm run test:ai-coach && npm run test:cloud-storage && npm run test:completion-analysis",
+    "test": "npm run test:dashboard && npm run test:ai-coach && npm run test:cloud-storage && npm run test:completion-analysis && npm run test:screenshot-import && npm run test:demo",
     "sync:assets": "node scripts/sync-official-assets.cjs",
     "prestart": "npm run sync:assets",
     "start": "node serve.cjs",
@@ -16,8 +16,10 @@
     "test:modern-ui": "node tests/modern-dashboard-ui.test.cjs",
     "test:heatmap": "node tests/workout-heatmap.test.cjs && node tests/dashboard-ui.test.cjs",
     "test:animations": "node tests/exercise-animations.test.cjs",
+    "test:demo": "node tests/exercise-demo.test.cjs && node tests/exercise-animations.test.cjs",
     "test:completion-analysis": "node tests/completed-workout-analysis.test.cjs",
-    "test:progression": "node tests/progression-service.test.cjs"
+    "test:progression": "node tests/progression-service.test.cjs",
+    "test:screenshot-import": "node tests/screenshot-import.test.cjs && node tests/screenshot-ocr-ai.test.cjs"
   },
   "license": "MIT",
   "dependencies": {

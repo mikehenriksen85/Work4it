@@ -4,11 +4,12 @@
   const OCR_SCRIPT = "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js";
   const MAX_FILE_BYTES = 12 * 1024 * 1024;
   const IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/webp", "image/bmp"]);
+  const IMPORTS_KEY = "screenshot_imports";
   let state = createState();
   let scriptPromise = null;
 
   function defaultNewExerciseSetCount() {
-    return Math.max(1, Number(window.Work4itDefaults?.newExerciseSetCount) || 1);
+    return 1;
   }
 
   function createState() {
@@ -20,8 +21,26 @@
       rawText: "",
       ocrConfidence: 0,
       result: null,
+      interpretationSource: "",
+      aiStatus: "idle",
+      aiError: "",
+      ocrPasses: [],
       processing: false
     };
+  }
+
+  function semanticEngine() {
+    return window.Work4itScreenshotSemantic || null;
+  }
+
+  function approvedImportHistory() {
+    try {
+      const values = JSON.parse(localStorage.getItem(IMPORTS_KEY) || "[]");
+      return Array.isArray(values) ? values : [];
+    } catch (error) {
+      console.warn("[Work4it Screenshot Import] Tidligere OCR-mappings kunne ikke læses.", error);
+      return [];
+    }
   }
 
   function escapeHtml(value) {
@@ -72,7 +91,13 @@
 
   function getCatalog() {
     const catalog = window.Work4itExerciseCatalog || window.work4itExerciseCatalog || [];
-    return Array.isArray(catalog) ? catalog.filter(exercise => exercise?.name) : [];
+    const seen = new Set();
+    return Array.isArray(catalog) ? catalog.filter(exercise => {
+      const key = semanticEngine()?.canonical?.(exercise?.name) || String(exercise?.name || "").toLowerCase().trim();
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    }) : [];
   }
 
   function levenshtein(a, b) {
@@ -134,6 +159,14 @@
   }
 
   function matchExerciseName(rawName) {
+    const semantic = semanticEngine();
+    if (semantic?.matchExerciseName) {
+      return semantic.matchExerciseName(
+        rawName,
+        getCatalog(),
+        semantic.extractLearnedMappings(approvedImportHistory())
+      );
+    }
     const catalog = getCatalog();
     const cleaned = cleanExerciseName(rawName);
     if (!cleaned) {
@@ -256,7 +289,7 @@
 
   function exerciseWarnings(exercise, confidence) {
     return [
-      exercise.setCountInferred ? "Sæt mangler - Work4it bruger 3 som standard, kontrollér feltet." : "",
+      exercise.setCountInferred ? "Sæt mangler - Work4it bruger 1 sæt som tydeligt markeret fallback." : "",
       !exercise.reps ? "Reps mangler." : "",
       !exercise.pause ? "Pause mangler." : "",
       exercise.matchStatus !== "matched" ? "Øvelsesmatch kræver kontrol." : "",
@@ -265,6 +298,13 @@
   }
 
   function parseOcrText(text, confidence = 0) {
+    const semantic = semanticEngine();
+    if (semantic?.parseOcrText) {
+      return semantic.parseOcrText(text, confidence, {
+        catalog: getCatalog(),
+        imports: approvedImportHistory()
+      });
+    }
     const lines = String(text || "").split(/\r?\n/).map(normalizeLine).filter(Boolean);
     const meaningful = lines.filter(line => !looksLikeNoise(line));
     const titleCandidate = meaningful.find(line => !dayHeading(line) && !/\b\d+\s*(?:x|×)\s*\d+\b/.test(line));
@@ -378,7 +418,7 @@
           <p>Understøtter screenshots og billeder fra Hevy, Strong, Fitbod, Excel og PDF-visninger.</p>
           <button class="small-btn" type="button" id="screenshotChooseBtn">Vælg billede</button>
         </div>
-        <p class="screenshot-privacy">Billedet analyseres lokalt i browseren og gemmes ikke som billedfil.</p>
+        <p class="screenshot-privacy">Billedet bliver i browseren og gemmes ikke som billedfil. Den aflæste OCR-tekst sendes til Work4its sikre AI-funktion og valideres mod øvelsesdatabasen.</p>
         <div class="screenshot-file-summary" id="screenshotFileSummary" hidden></div>
         <div class="screenshot-progress" id="screenshotProgress" hidden>
           <div class="screenshot-progress-track"><span id="screenshotProgressFill"></span></div>
@@ -446,6 +486,128 @@
     if (status && message) status.textContent = message;
   }
 
+  async function imageElementFromFile(file) {
+    if (typeof createImageBitmap === "function") return createImageBitmap(file);
+    const url = URL.createObjectURL(file);
+    try {
+      return await new Promise((resolve, reject) => {
+        const image = new Image();
+        image.onload = () => resolve(image);
+        image.onerror = () => reject(new Error("Billedet kunne ikke åbnes i browseren."));
+        image.src = url;
+      });
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  }
+
+  async function buildOcrCanvas(file) {
+    const source = await imageElementFromFile(file);
+    const sourceWidth = source.width || source.naturalWidth || 1;
+    const sourceHeight = source.height || source.naturalHeight || 1;
+    const upscale = sourceWidth < 1400 ? Math.min(2.2, 1400 / sourceWidth) : 1;
+    const maxPixels = 5_500_000;
+    const pixelScale = Math.min(upscale, Math.sqrt(maxPixels / Math.max(1, sourceWidth * sourceHeight)));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(sourceWidth * pixelScale));
+    canvas.height = Math.max(1, Math.round(sourceHeight * pixelScale));
+    const context = canvas.getContext("2d", { willReadFrequently: true });
+    if (!context) throw new Error("Browseren kunne ikke forbehandle billedet.");
+    context.imageSmoothingEnabled = true;
+    context.imageSmoothingQuality = "high";
+    context.drawImage(source, 0, 0, canvas.width, canvas.height);
+    source.close?.();
+
+    const pixels = context.getImageData(0, 0, canvas.width, canvas.height);
+    const data = pixels.data;
+    const histogram = new Array(256).fill(0);
+    let luminanceTotal = 0;
+    for (let index = 0; index < data.length; index += 4) {
+      const luminance = Math.round((0.2126 * data[index]) + (0.7152 * data[index + 1]) + (0.0722 * data[index + 2]));
+      histogram[luminance] += 1;
+      luminanceTotal += luminance;
+    }
+    const pixelCount = Math.max(1, data.length / 4);
+    const average = luminanceTotal / pixelCount;
+    const percentile = target => {
+      const threshold = pixelCount * target;
+      let count = 0;
+      for (let index = 0; index < histogram.length; index += 1) {
+        count += histogram[index];
+        if (count >= threshold) return index;
+      }
+      return 255;
+    };
+    const low = percentile(0.04);
+    const high = Math.max(low + 20, percentile(0.96));
+    const invert = average < 118;
+    for (let index = 0; index < data.length; index += 4) {
+      let luminance = Math.round((0.2126 * data[index]) + (0.7152 * data[index + 1]) + (0.0722 * data[index + 2]));
+      luminance = Math.max(0, Math.min(255, Math.round(((luminance - low) / (high - low)) * 255)));
+      if (invert) luminance = 255 - luminance;
+      const contrasted = luminance > 205 ? 255 : luminance < 50 ? 0 : luminance;
+      data[index] = contrasted;
+      data[index + 1] = contrasted;
+      data[index + 2] = contrasted;
+    }
+    context.putImageData(pixels, 0, 0);
+    return { canvas, inverted: invert, averageLuminance: Math.round(average), scale: pixelScale };
+  }
+
+  function interpretationQuality(result) {
+    return semanticEngine()?.qualityScore?.(result) || 0;
+  }
+
+  async function runOcrPass(worker, source, label) {
+    const output = await worker.recognize(source);
+    const rawText = output.data?.text || "";
+    const confidence = Number(output.data?.confidence) || 0;
+    const result = parseOcrText(rawText, confidence);
+    return { label, rawText, confidence, result, quality: interpretationQuality(result) };
+  }
+
+  async function applyAiInterpretation(localResult) {
+    const ai = window.Work4itScreenshotAI;
+    if (!ai?.interpret || !state.rawText.trim()) {
+      state.aiStatus = "unavailable";
+      return localResult;
+    }
+    state.aiStatus = "processing";
+    updateProgress("AI fortolker øvelser og træningsdage...");
+    try {
+      const response = await ai.interpret({
+        rawText: state.rawText,
+        ocrConfidence: state.ocrConfidence,
+        catalog: getCatalog(),
+        localResult,
+        learnedMappings: [...(semanticEngine()?.extractLearnedMappings?.(approvedImportHistory()) || new Map()).entries()]
+          .slice(-150)
+          .map(([ocrName, mapping]) => ({ ocrName, catalogName: mapping.catalogName }))
+      });
+      const validated = semanticEngine()?.validateAiResult?.(response?.result, state.rawText, {
+        catalog: getCatalog(),
+        imports: approvedImportHistory()
+      });
+      if (!validated) throw new Error("AI-resultatet bestod ikke Work4its validering.");
+      state.aiStatus = "success";
+      state.interpretationSource = "vertex_ai_validated";
+      if (response?.modelUsed === true) {
+        await window.Work4itAIRequestCounter?.refresh?.().catch(error => {
+          console.warn("[Work4it Screenshot Import] AI Request-visningen kunne ikke opdateres efter modelkaldet.", error);
+        });
+      }
+      return semanticEngine()?.mergeInterpretations?.(localResult, validated) || validated;
+    } catch (error) {
+      state.aiStatus = "fallback";
+      state.aiError = error?.message || String(error || "AI-fortolkning fejlede");
+      console.warn("[Work4it Screenshot Import] AI-fortolkning brugte lokal fallback.", {
+        code: error?.code || "ai-unavailable",
+        message: state.aiError
+      });
+      return localResult;
+    }
+  }
+
   async function analyze() {
     if (!state.file || state.processing) return;
     state.processing = true;
@@ -462,11 +624,21 @@
           updateProgress(event.status === "recognizing text" ? "Aflæser træningsdata..." : "Forbereder billedanalyse...");
         }
       });
-      const output = await worker.recognize(state.file);
+      const processed = await buildOcrCanvas(state.file);
+      const passes = [await runOcrPass(worker, processed.canvas, processed.inverted ? "dark_normalized" : "contrast_normalized")];
+      if (passes[0].confidence < 82 || passes[0].quality < 70) {
+        state.progress = 78;
+        updateProgress("Kontrollerer en ekstra OCR-variant...");
+        passes.push(await runOcrPass(worker, state.file, "original"));
+      }
       await worker.terminate();
-      state.rawText = output.data?.text || "";
-      state.ocrConfidence = Number(output.data?.confidence) || 0;
-      state.result = parseOcrText(state.rawText, state.ocrConfidence);
+      passes.sort((left, right) => right.quality - left.quality || right.confidence - left.confidence);
+      const selected = passes[0];
+      state.ocrPasses = passes.map(pass => ({ label: pass.label, confidence: pass.confidence, quality: pass.quality }));
+      state.rawText = selected.rawText;
+      state.ocrConfidence = selected.confidence;
+      state.interpretationSource = "local_semantic";
+      state.result = await applyAiInterpretation(selected.result);
       state.progress = 100;
       updateProgress("Analysen er færdig. Kontrollér resultatet før import.");
       renderReview();
@@ -487,11 +659,13 @@
     content.innerHTML = `
       <div class="screenshot-review">
         <div class="screenshot-review-summary">
-          <div><strong>OCR-sikkerhed</strong><span class="confidence-badge ${state.result.confidence < 75 ? "uncertain" : ""}">${state.result.confidence}%</span></div>
-          <p>Felter med gul markering kræver ekstra kontrol.</p>
+          <div><strong>OCR-sikkerhed</strong><span class="confidence-badge ${state.result.confidence < 60 ? "uncertain" : ""}">${state.result.confidence}%</span></div>
+          <div><strong>Fortolkning</strong><span class="confidence-badge ${state.aiStatus === "fallback" ? "uncertain" : ""}">${state.aiStatus === "success" ? "AI + validering" : "Lokal semantisk fallback"}</span></div>
+          <p>Kun gule felter kræver din kontrol. Tomme værdier er ikke blevet gættet.</p>
         </div>
+        ${state.aiStatus === "fallback" ? `<div class="screenshot-info">AI kunne ikke kontaktes, så Work4it brugte den lokale semantiske parser. Resultatet kan stadig godkendes.</div>` : ""}
         ${state.result.warnings.map(warning => `<div class="screenshot-warning">⚠ ${escapeHtml(warning)}</div>`).join("")}
-        <label class="screenshot-field">Programnavn<input id="importProgramTitle" class="field" value="${escapeHtml(state.result.programName || state.result.title)}"></label>
+        <label class="screenshot-field${Number(state.result.titleConfidence) < 85 ? " needs-review" : ""}">Programnavn<input id="importProgramTitle" class="field" value="${escapeHtml(state.result.programName || state.result.title)}"></label>
         <div id="importDays">${state.result.days.map(renderDay).join("")}</div>
         <details class="screenshot-ocr-details"><summary>Vis aflæst OCR-tekst</summary><textarea id="importRawText" class="field" rows="8">${escapeHtml(state.rawText)}</textarea><button class="small-btn" type="button" id="reparseImportBtn">Analysér redigeret tekst igen</button></details>
         <div class="row screenshot-review-actions">
@@ -502,6 +676,14 @@
       </div>`;
     document.getElementById("approveScreenshotImportBtn")?.addEventListener("click", approve);
     document.getElementById("restartScreenshotImportBtn")?.addEventListener("click", open);
+    document.querySelectorAll(".import-exercise-sets").forEach(input => input.addEventListener("change", () => {
+      syncSetRowCount(input);
+      input.closest(".screenshot-field")?.classList.remove("needs-review");
+    }));
+    document.querySelectorAll(".import-exercise-match").forEach(select => select.addEventListener("change", () => {
+      select.closest(".screenshot-field")?.classList.toggle("needs-review", !select.value);
+      select.closest(".screenshot-exercise")?.classList.toggle("uncertain", !select.value);
+    }));
     document.getElementById("reparseImportBtn")?.addEventListener("click", () => {
       state.rawText = document.getElementById("importRawText")?.value || "";
       state.result = parseOcrText(state.rawText, state.ocrConfidence);
@@ -520,12 +702,14 @@
   function renderExercise(exercise, dayIndex, exerciseIndex) {
     const uncertain = exercise.uncertain ? " uncertain" : "";
     const catalog = getCatalog();
-    const suggestions = exercise.matchSuggestions?.length ? exercise.matchSuggestions : catalog.slice(0, 8).map(item => ({ name: item.name, muscle: item.muscle, confidence: 0 }));
+    const suggestions = (exercise.matchSuggestions || []).slice(0, 3);
     const selected = exercise.matchedName || "";
+    const suggestionNames = new Set(suggestions.map(item => item.name));
+    const remainingCatalog = catalog.filter(item => !suggestionNames.has(item.name)).sort((left, right) => left.name.localeCompare(right.name, "da"));
     const suggestionOptions = [
       `<option value="">Vælg match...</option>`,
-      ...suggestions.map(item => `<option value="${escapeHtml(item.name)}" ${item.name === selected ? "selected" : ""}>${escapeHtml(item.name)}${item.confidence ? ` (${item.confidence}%)` : ""}</option>`),
-      ...(!selected && exercise.name ? [`<option value="${escapeHtml(exercise.name)}" selected>Brug OCR-navn: ${escapeHtml(exercise.name)}</option>`] : [])
+      ...(suggestions.length ? [`<optgroup label="Mest sandsynlige">${suggestions.map(item => `<option value="${escapeHtml(item.name)}" ${item.name === selected ? "selected" : ""}>${escapeHtml(item.name)}${item.confidence ? ` (${item.confidence}%)` : ""}</option>`).join("")}</optgroup>`] : []),
+      `<optgroup label="Alle Work4it-øvelser">${remainingCatalog.map(item => `<option value="${escapeHtml(item.name)}" ${item.name === selected ? "selected" : ""}>${escapeHtml(item.name)}</option>`).join("")}</optgroup>`
     ].join("");
     const matchText = exercise.matchStatus === "matched"
       ? `Match: ${exercise.matchedName} (${exercise.matchConfidence}%)`
@@ -533,17 +717,43 @@
         ? `Forslag: ${exercise.matchedName || "vælg match"} (${exercise.matchConfidence || 0}%)`
         : "Usikkert match - vælg øvelse";
     const warnings = (exercise.warnings || []).map(warning => `<span>${escapeHtml(warning)}</span>`).join("");
+    const reviewFields = new Set(exercise.reviewFields || []);
+    const sets = Array.isArray(exercise.sets) && exercise.sets.length
+      ? exercise.sets
+      : Array.from({ length: Math.max(1, Number(exercise.setCount) || 1) }, () => ({ reps: exercise.reps || "", weight: exercise.weight || "", pause: exercise.pause || "" }));
     return `<div class="screenshot-exercise${uncertain}" data-import-exercise="${exerciseIndex}">
-      <label class="screenshot-field wide">OCR-navn<input class="field import-exercise-name" value="${escapeHtml(exercise.originalName || exercise.name)}"></label>
-      <label class="screenshot-field wide">Work4it-match<select class="field import-exercise-match">${suggestionOptions}</select></label>
-      <label class="screenshot-field">Sæt<input class="field import-exercise-sets" type="number" min="1" max="20" value="${exercise.setCount}"></label>
-      <label class="screenshot-field">Reps<input class="field import-exercise-reps" value="${escapeHtml(exercise.reps)}"></label>
-      <label class="screenshot-field">Kg<input class="field import-exercise-weight" type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" value="${escapeHtml(exercise.weight)}" oninput="window.sanitizeKgInput?.(this)"></label>
-      <label class="screenshot-field">Pause<input class="field import-exercise-pause" value="${escapeHtml(exercise.pause)}"></label>
+      <label class="screenshot-field wide">Aflæst navn<input class="field import-exercise-name" value="${escapeHtml(exercise.originalName || exercise.name)}"></label>
+      <label class="screenshot-field wide${exercise.matchStatus === "matched" ? "" : " needs-review"}">Work4it-match<select class="field import-exercise-match">${suggestionOptions}</select></label>
+      <label class="screenshot-field${reviewFields.has("sets") ? " needs-review" : ""}">Antal sæt<input class="field import-exercise-sets" type="number" min="1" max="20" value="${sets.length}"></label>
+      <div class="screenshot-set-editor wide" role="group" aria-label="Sætdata for ${escapeHtml(exercise.originalName || exercise.name)}">${sets.map((set, setIndex) => renderSetRow(set, setIndex, reviewFields)).join("")}</div>
       <label class="screenshot-field wide">Noter<input class="field import-exercise-notes" value="${escapeHtml(exercise.notes)}"></label>
       <div class="screenshot-match-status wide">${escapeHtml(matchText)}${warnings ? `<div class="screenshot-field-warnings">${warnings}</div>` : ""}</div>
       <button class="small-btn red import-remove-exercise" type="button" aria-label="Fjern øvelse" onclick="this.closest('.screenshot-exercise').remove()">Slet</button>
     </div>`;
+  }
+
+  function renderSetRow(set, setIndex, reviewFields = new Set()) {
+    return `<div class="screenshot-set-row" data-import-set="${setIndex}">
+      <span class="screenshot-set-number" aria-label="Sæt ${setIndex + 1}">${setIndex + 1}</span>
+      <label class="screenshot-field${reviewFields.has("reps") && !set.reps ? " needs-review" : ""}">Reps<input class="field import-set-reps" inputmode="numeric" value="${escapeHtml(set.reps || "")}"></label>
+      <label class="screenshot-field${reviewFields.has("weight") && !set.weight ? " needs-review" : ""}">Kg<input class="field import-set-weight" type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" value="${escapeHtml(set.weight || "")}" oninput="window.sanitizeKgInput?.(this)"></label>
+      <label class="screenshot-field${reviewFields.has("pause") && !set.pause ? " needs-review" : ""}">Pause<input class="field import-set-pause" inputmode="numeric" placeholder="mm:ss" value="${escapeHtml(set.pause || "")}"></label>
+    </div>`;
+  }
+
+  function syncSetRowCount(input) {
+    const exercise = input?.closest("[data-import-exercise]");
+    const editor = exercise?.querySelector(".screenshot-set-editor");
+    if (!editor) return;
+    const requested = Math.max(1, Math.min(20, Number(input.value) || 1));
+    input.value = requested;
+    const existing = [...editor.querySelectorAll("[data-import-set]")].map(row => ({
+      reps: row.querySelector(".import-set-reps")?.value || "",
+      weight: row.querySelector(".import-set-weight")?.value || "",
+      pause: row.querySelector(".import-set-pause")?.value || ""
+    }));
+    const fallback = existing.at(-1) || { reps: "", weight: "", pause: "" };
+    editor.innerHTML = Array.from({ length: requested }, (_, index) => renderSetRow(existing[index] || fallback, index)).join("");
   }
 
   function collectReview() {
@@ -553,29 +763,32 @@
       title: dayElement.querySelector(".import-day-title")?.value.trim() || `Dag ${dayIndex + 1}`,
       exercises: [...dayElement.querySelectorAll("[data-import-exercise]")].map(exerciseElement => {
         const setCount = Math.max(1, Math.min(20, Number(exerciseElement.querySelector(".import-exercise-sets")?.value) || 1));
-        const reps = exerciseElement.querySelector(".import-exercise-reps")?.value.trim() || "";
-        const weight = exerciseElement.querySelector(".import-exercise-weight")?.value.trim() || "";
-        const pause = exerciseElement.querySelector(".import-exercise-pause")?.value.trim() || "";
         const ocrName = exerciseElement.querySelector(".import-exercise-name")?.value.trim() || "";
         const selectedMatch = exerciseElement.querySelector(".import-exercise-match")?.value.trim() || "";
         const selectedExercise = getCatalog().find(exercise => exercise.name === selectedMatch);
         const finalName = selectedMatch || ocrName;
+        const setCountFallback = exerciseElement.querySelector(".import-exercise-sets")?.closest(".screenshot-field")?.classList.contains("needs-review") === true;
         return {
           name: finalName,
           originalName: ocrName,
           matchedName: selectedMatch,
           matchStatus: selectedMatch ? "approved" : "needs_review",
+          setCountFallback,
           muscle: selectedExercise?.muscle || "",
           notes: exerciseElement.querySelector(".import-exercise-notes")?.value.trim() || "",
-          sets: Array.from({ length: setCount }, () => ({
-            prev: "-", completed: false, weight, reps, targetReps: reps, pause, pauseManual: true
-          }))
+          sets: [...exerciseElement.querySelectorAll("[data-import-set]")].slice(0, setCount).map(setElement => {
+            const reps = setElement.querySelector(".import-set-reps")?.value.trim() || "";
+            const weight = setElement.querySelector(".import-set-weight")?.value.trim().replace(",", ".") || "";
+            const pause = setElement.querySelector(".import-set-pause")?.value.trim() || "";
+            return { prev: "-", completed: false, weight, reps, targetReps: reps, pause, pauseManual: Boolean(pause) };
+          })
         };
       }).filter(exercise => exercise.name)
     })).filter(day => day.exercises.length);
     const warnings = [];
     days.forEach(day => day.exercises.forEach(exercise => {
       if (!exercise.matchedName) warnings.push(`${exercise.originalName || exercise.name}: mangler Work4it-match.`);
+      if (exercise.setCountFallback) warnings.push(`${exercise.name}: 1 sæt er indsat som fallback og bør kontrolleres.`);
       if (!exercise.sets?.[0]?.reps) warnings.push(`${exercise.name}: reps mangler.`);
     }));
     return { programName: title, title, days, warnings };
@@ -593,10 +806,13 @@
       matchConfidence: 0,
       matchStatus: "needs_review",
       matchSuggestions: getCatalog().slice(0, 8).map(item => ({ name: item.name, muscle: item.muscle, confidence: 0 })),
-      setCount: defaultNewExerciseSetCount(),
+      setCount: 1,
+      setCountInferred: true,
       reps: "",
       weight: "",
       pause: "",
+      sets: [{ reps: "", weight: "", pause: "" }],
+      reviewFields: ["name", "sets", "reps", "weight", "pause"],
       notes: "",
       uncertain: true,
       warnings: ["Manuelt tilføjet - vælg øvelse og udfyld manglende felter."]
@@ -614,14 +830,30 @@
       const proceed = window.confirm(`Der er ${program.warnings.length} felt${program.warnings.length === 1 ? "" : "er"} der kræver kontrol:\n\n${program.warnings.slice(0, 6).join("\n")}${program.warnings.length > 6 ? "\n..." : ""}\n\nVil du importere alligevel?`);
       if (!proceed) return;
     }
+    const approveButton = document.getElementById("approveScreenshotImportBtn");
+    if (approveButton) {
+      approveButton.disabled = true;
+      approveButton.textContent = "Opretter og gemmer...";
+    }
     window.dispatchEvent(new CustomEvent("screenshot-import:approved", {
       detail: {
         program,
+        setStatus(message, failed = false) {
+          if (!approveButton) return;
+          approveButton.disabled = false;
+          approveButton.textContent = failed ? "Prøv at oprette igen" : message;
+        },
         importMetadata: {
           sourceType: "screenshot",
           sourceName: state.file?.name || "",
           ocrEngine: "Tesseract.js 5.1.1 (eng+dan)",
           ocrConfidence: state.ocrConfidence,
+          parserVersion: semanticEngine()?.VERSION || "legacy",
+          interpretationSource: state.result?.interpretationSource || state.interpretationSource || "local_semantic",
+          aiStatus: state.aiStatus,
+          ocrPasses: state.ocrPasses,
+          approvedMappings: semanticEngine()?.approvedMappings?.(program) || [],
+          diagnostics: state.result?.diagnostics || {},
           approvedAt: new Date().toISOString()
         }
       }

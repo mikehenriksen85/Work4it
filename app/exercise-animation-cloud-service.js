@@ -57,6 +57,11 @@ function writeLocalMetadata(exerciseId, value) {
   } catch {}
 }
 
+function peekAnimation(exerciseId) {
+  if (!exerciseId) return null;
+  return memoryCache.get(exerciseId) || readLocalMetadata(exerciseId) || null;
+}
+
 function serializableMetadata(value) {
   const validation = model().validateMetadata(value);
   if (!validation.valid) throw new Error(validation.errors.join("; "));
@@ -98,6 +103,16 @@ async function getAnimation(exerciseId, { force = false } = {}) {
       return cached;
     }
     throw error;
+  }
+}
+
+async function primeAnimation(exerciseId) {
+  if (!exerciseId || !auth.currentUser?.uid) return null;
+  try {
+    return await getAnimation(exerciseId);
+  } catch (error) {
+    console.info("[Work4it animation] Metadata kunne ikke forudindlæses", { exerciseId, code: error?.code || "unknown" });
+    return null;
   }
 }
 
@@ -159,6 +174,8 @@ async function approveVersion(exerciseId, version) {
 window.Work4itExerciseAnimationCloud = Object.freeze({
   ROOT_COLLECTION,
   STORAGE_ROOT,
+  peekAnimation,
+  primeAnimation,
   getAnimation,
   getLatestVersion,
   saveDraft,
@@ -166,5 +183,7 @@ window.Work4itExerciseAnimationCloud = Object.freeze({
   approveVersion,
   clearCache: exerciseId => exerciseId ? memoryCache.delete(exerciseId) : memoryCache.clear()
 });
+
+window.dispatchEvent(new CustomEvent("work4it:exercise-animation-cloud-ready"));
 
 window.addEventListener("firebase-auth:changed", () => memoryCache.clear());

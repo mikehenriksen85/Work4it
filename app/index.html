@@ -1293,20 +1293,25 @@
     .screenshot-progress { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 10px; }
     .screenshot-progress-track { height: 10px; overflow: hidden; border-radius: 999px; background: #334155; }
     .screenshot-progress-track span { display: block; width: 0; height: 100%; background: var(--blue); transition: width .2s linear; }
-    .screenshot-review-summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: #17202b; }
+    .screenshot-review-summary { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: #17202b; }
     .screenshot-review-summary div { display: flex; align-items: center; gap: 8px; }
     .screenshot-review-summary p { margin: 0; color: var(--muted); font-size: var(--font-size-small); }
     .confidence-badge { padding: 3px 7px; border-radius: 999px; color: #bbf7d0; background: rgba(34,197,94,.14); font-size: var(--font-size-small); font-weight: var(--font-weight-semibold); }
     .confidence-badge.uncertain { color: #fde68a; background: rgba(245,158,11,.14); }
     .screenshot-warning { padding: 10px 12px; border: 1px solid #92400e; border-radius: 8px; color: #fde68a; background: rgba(245,158,11,.08); }
+    .screenshot-info { padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; color: var(--text-secondary); background: rgba(59,130,246,.08); }
     .screenshot-field { display: grid; gap: 5px; color: var(--muted); font-size: var(--font-size-small); }
+    .screenshot-field.needs-review { padding: 6px; border: 1px solid rgba(245,158,11,.72); border-radius: var(--radius-sm); background: rgba(245,158,11,.07); }
     .screenshot-day { display: grid; gap: 10px; padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: #17202b; }
     .screenshot-exercise-list { display: grid; gap: 10px; }
-    .screenshot-exercise { display: grid; grid-template-columns: repeat(6,minmax(72px,1fr)) auto; align-items: end; gap: 8px; padding: 10px; border: 1px solid #334155; border-radius: 8px; }
+    .screenshot-exercise { display: grid; grid-template-columns: repeat(4,minmax(92px,1fr)); align-items: end; gap: 10px; padding: 12px; border: 1px solid #334155; border-radius: var(--radius-md); }
     .screenshot-exercise.uncertain { border-color: #a16207; background: rgba(245,158,11,.05); }
     .screenshot-exercise .wide { grid-column: span 2; }
     .screenshot-match-status { color: var(--muted); font-size: var(--font-size-small); line-height: var(--line-height-body); }
     .screenshot-field-warnings { display: grid; gap: 3px; margin-top: 4px; color: #fde68a; }
+    .screenshot-set-editor { display: grid; grid-column: 1 / -1; gap: 7px; padding: 8px; border-radius: var(--radius-sm); background: rgba(2,6,23,.25); }
+    .screenshot-set-row { display: grid; grid-template-columns: 34px repeat(3,minmax(72px,1fr)); align-items: end; gap: 8px; }
+    .screenshot-set-number { display: grid; place-items: center; min-height: 42px; color: var(--text-primary); font-weight: var(--font-weight-semibold); }
     .import-add-exercise { justify-self: start; }
     .screenshot-ocr-details { border-top: 1px solid var(--border); padding-top: 12px; }
     .screenshot-ocr-details summary { cursor: pointer; color: var(--blue); font-weight: var(--font-weight-semibold); }
@@ -1317,6 +1322,8 @@
       .screenshot-review-summary { align-items: flex-start; flex-direction: column; }
       .screenshot-exercise { grid-template-columns: repeat(2,minmax(0,1fr)); }
       .screenshot-exercise .wide { grid-column: 1 / -1; }
+      .screenshot-set-row { grid-template-columns: 30px repeat(3,minmax(0,1fr)); gap: 6px; }
+      .screenshot-set-row .field { min-width: 0; padding-inline: 7px; font-size: 16px; }
       .import-remove-exercise { min-height: 44px; }
       .screenshot-review-actions { display: grid; grid-template-columns: 1fr; }
       .screenshot-review-actions .small-btn { width: 100%; min-height: 44px; }
@@ -4001,7 +4008,7 @@
         <div class="about-feature-grid">
           <section class="about-feature"><h3>Data vi gemmer</h3><p>Kontakt/login-data fra Firebase, profiloplysninger, alder, køn, højde, vægt, kropsmålinger, mål, træningsopsætning, programmer, øvelser, sæt, reps, kg, pauser, historik, kalorieestimater, AI Copilot-kommandoer, imports, medlemskabsstatus og lokale appindstillinger.</p></section>
           <section class="about-feature"><h3>Hvor data gemmes</h3><p>Når du er logget ind, gemmes understøttede data i Firebase/Firestore under <code>users/{uid}</code>. Browserens localStorage bruges som cache og fallback, så appen kan fortsætte ved midlertidige forbindelsesproblemer.</p></section>
-          <section class="about-feature"><h3>AI og tredjepart</h3><p>Den nuværende AI Copilot kører primært som app-logik og gemmer kommandohistorik. Hvis Work4it senere sender tekst til eksterne AI-modeller, skal dataminimering, formål, samtykke og databehandleraftale opdateres først. Firebase/Google bruges til login, hosting og database. Demo-knappen kan åbne en Google-videosøgning.</p></section>
+          <section class="about-feature"><h3>AI og tredjepart</h3><p>Den nuværende AI Copilot kører primært som app-logik og gemmer kommandohistorik. Hvis Work4it senere sender tekst til eksterne AI-modeller, skal dataminimering, formål, samtykke og databehandleraftale opdateres først. Firebase/Google bruges til login, hosting og database. Demo-knappen kan midlertidigt åbne en YouTube- eller Google-videosøgning, indtil en godkendt Work4it-animation er tilgængelig.</p></section>
           <section class="about-feature"><h3>Dine rettigheder</h3><p>Du kan eksportere dine data og slette konto samt tilhørende cloud-data fra Profil og konto. Du kan også rydde den lokale cache på enheden. Ret profiloplysninger direkte på profilsiden.</p></section>
           <section class="about-feature"><h3>Opbevaring</h3><p>Data opbevares, indtil du sletter dem eller kontoen. Papirkurv-data er tænkt til automatisk sletning efter 30 dage. Aktive træningssessioner er midlertidige og flyttes til historik, når træningen afsluttes.</p></section>
           <section class="about-feature"><h3>Cookies og lokal lagring</h3><p>Work4it bruger Firebase-login, PWA/offline-cache og localStorage til nødvendige appfunktioner. Der er ikke tilføjet marketing-cookies i appkoden. Hvis Analytics eller betaling tilføjes senere, skal cookie-/samtykketeksten opdateres.</p></section>
@@ -5535,6 +5542,27 @@
     window.addEventListener("resize", positionExerciseActionMenu);
     window.addEventListener("scroll", positionExerciseActionMenu, true);
 
+    const queuedExerciseDemoMetadata = new Set();
+
+    function primeExerciseDemoMetadata(exerciseId) {
+      if (!exerciseId) return;
+      queuedExerciseDemoMetadata.add(exerciseId);
+      const cloud = window.Work4itExerciseAnimationCloud;
+      if (!cloud?.primeAnimation) return;
+      cloud.primeAnimation(exerciseId).finally(() => queuedExerciseDemoMetadata.delete(exerciseId));
+    }
+
+    function primeVisibleExerciseDemoMetadata() {
+      const exerciseIds = new Set(queuedExerciseDemoMetadata);
+      document.querySelectorAll(".exercise[data-exercise-id]").forEach(block => {
+        exerciseIds.add(block.dataset.exerciseId);
+      });
+      exerciseIds.forEach(primeExerciseDemoMetadata);
+    }
+
+    window.addEventListener("work4it:exercise-animation-cloud-ready", primeVisibleExerciseDemoMetadata);
+    window.addEventListener("firebase-auth:changed", () => window.setTimeout(primeVisibleExerciseDemoMetadata, 0));
+
     function addExercise(name = null, muscle = "Ryg", savedSets = null, metadata = null) {
       if (!name) name = `${t("chooseExercisePrefix")} ${t("exerciseHeader").toLowerCase()}...`;
       if (muscleGroupKeys.includes(name)) {
@@ -5552,12 +5580,14 @@
       block.dataset.role = plan.role || window.TrainingGoalEngine?.exerciseRole?.(name, muscle) || "accessory";
       block.dataset.exerciseType = isCardio ? "cardio" : "strength";
       block.dataset.trainingStyle = plan.trainingStyle || catalog.find(exercise => exercise.name === name && exercise.muscle === muscle)?.trainingStyle || "gym";
+      block.dataset.demoUrl = plan.demoUrl || plan.videoUrl || plan.youtubeUrl || "";
       const progressionMetadata = progressionMetadataForExercise(name, muscle, plan);
       block.dataset.exerciseId = progressionMetadata.exerciseId;
       block.dataset.loadType = progressionMetadata.loadType;
       block.dataset.equipment = progressionMetadata.equipment;
       block.dataset.weightUnit = progressionMetadata.unit;
       block.dataset.weightStep = progressionMetadata.weightStep;
+      primeExerciseDemoMetadata(progressionMetadata.exerciseId);
       const historyEntry = latestExerciseHistory(name, muscle);
       const historyPause = historyEntry ? Math.max(0, Number(historyEntry.pauseSeconds) || parsePause(historyEntry.pause || "")) : 0;
       const savedExercisePause = parsePause(metadata?.pause || "") || parsePause(savedSets?.find(set => set?.pause)?.pause || "");
@@ -5704,11 +5734,19 @@
     function openExerciseDemo(slot) {
       const exerciseName = $(`name-${slot}`)?.textContent?.trim();
       if (!exerciseName) return;
-      if (window.Work4itMannequin?.supports?.(exerciseName) && toggleInlineExerciseDemo(slot, exerciseName)) return;
       const muscle = $(`name-${slot}`)?.dataset?.muscle || "";
       const block = $(`block-${slot}`);
       const id = block?.dataset?.exerciseId || window.Work4itExerciseAnimations?.exerciseId?.(exerciseName, muscle);
-      window.Work4itExerciseAnimations?.openViewer?.({ name: exerciseName, muscle, exerciseId: id });
+      const demo = window.Work4itExerciseDemo?.open?.({
+        name: exerciseName,
+        muscle,
+        exerciseId: id,
+        demoUrl: block?.dataset?.demoUrl || ""
+      });
+      if (!demo) {
+        const url = `https://www.google.com/search?tbm=vid&q=${encodeURIComponent(exerciseName + " exercise form")}`;
+        window.open(url, "_blank", "noopener,noreferrer");
+      }
     }
     let replacementState = { slot: "", mode: "", candidate: null };
 
@@ -5980,11 +6018,13 @@
         exerciseBlock.dataset.role = plan.role;
         exerciseBlock.dataset.exerciseType = isCardio ? "cardio" : "strength";
         exerciseBlock.dataset.trainingStyle = definition?.trainingStyle || "gym";
+        exerciseBlock.dataset.demoUrl = definition?.demoUrl || definition?.videoUrl || definition?.youtubeUrl || "";
         exerciseBlock.dataset.exerciseId = progressionMetadata.exerciseId;
         exerciseBlock.dataset.loadType = progressionMetadata.loadType;
         exerciseBlock.dataset.equipment = progressionMetadata.equipment;
         exerciseBlock.dataset.weightUnit = progressionMetadata.unit;
         exerciseBlock.dataset.weightStep = progressionMetadata.weightStep;
+        primeExerciseDemoMetadata(progressionMetadata.exerciseId);
       }
       $(`name-${slot}`).textContent = name;
       $(`name-${slot}`).dataset.muscle = muscle;
@@ -7037,6 +7077,7 @@
             role: block.dataset.role || "accessory",
             exerciseType: block.dataset.exerciseType || "strength",
             trainingStyle: block.dataset.trainingStyle || "gym",
+            demoUrl: block.dataset.demoUrl || "",
             loadType: block.dataset.loadType || "external",
             equipment: block.dataset.equipment || "external",
             unit: block.dataset.weightUnit || "kg",
@@ -10821,11 +10862,12 @@
       return "Ryg";
     }
 
-    function createProgramFromScreenshot(event) {
+    async function createProgramFromScreenshot(event) {
       const imported = event.detail?.program;
       if (!imported?.days?.length) return;
       const programs = getPrograms();
       if (programs.length >= 2 && !window.Membership?.getMembership?.().isPremium) {
+        event.detail?.setStatus?.("Se medlemskab", true);
         openPremiumFeature("programs");
         return;
       }
@@ -10862,6 +10904,12 @@
         goal: currentTrainingGoal(),
         days
       });
+      programs.push(program);
+      if (!setPrograms(programs)) {
+        event.detail?.setStatus?.("Prøv at oprette igen", true);
+        alert("Det importerede træningspas kunne ikke gemmes lokalt.");
+        return;
+      }
       const importRecord = window.FirestoreDataService?.saveImportData?.({
         ...event.detail.importMetadata,
         programId: id,
@@ -10870,17 +10918,48 @@
         exerciseCount: program.days.reduce((sum, day) => sum + day.exercises.length, 0),
         status: "approved"
       });
-      programs.push(program);
-      if (!setPrograms(programs)) {
-        alert("Det importerede træningspas kunne ikke gemmes lokalt.");
-        return;
+      const authenticatedUser = window.FirebaseAuthService?.getCurrentUser?.() || null;
+      let cloudSaved = false;
+      let cloudError = null;
+      if (authenticatedUser?.uid) {
+        const programCloudResult = await pendingProgramsCloudSave;
+        if (programCloudResult === true) {
+          try {
+            const saveImportToCloud = window.FirestoreDataService?.saveImportDataToCloud;
+            const importSyncResult = typeof saveImportToCloud === "function" ? await saveImportToCloud(importRecord) : false;
+            cloudSaved = importSyncResult === true;
+          } catch (error) {
+            cloudError = error;
+          }
+        } else if (programCloudResult?.error) {
+          cloudError = programCloudResult.error;
+        }
+      }
+      if (cloudError) {
+        console.error("[Work4it Screenshot Import] Cloud-gemning fejlede.", {
+          operation: "createProgramFromScreenshot",
+          path: `users/${window.FirestoreDataService?.getActiveUid?.() || "unknown"}/workouts/${id}`,
+          code: cloudError?.code || "unknown",
+          message: cloudError?.message || String(cloudError)
+        });
+      } else {
+        console.info("[Work4it Screenshot Import] Import godkendt.", {
+          programId: id,
+          interpretationSource: event.detail?.importMetadata?.interpretationSource || "unknown",
+          ocrConfidence: event.detail?.importMetadata?.ocrConfidence || 0,
+          dayCount: program.days.length,
+          exerciseCount: program.days.reduce((sum, day) => sum + day.exercises.length, 0),
+          cloudSaved
+        });
       }
       renderSaved();
       closeModal();
       openWorkout(id);
-      $("autosaveStatus").textContent = window.FirestoreDataService?.isCloudPrimary?.()
-        ? "Importeret og sendt til Cloud"
-        : "Importeret og gemt lokalt";
+      $("autosaveStatus").textContent = cloudSaved
+        ? "✔ Importeret og synkroniseret med Cloud"
+        : authenticatedUser?.uid
+          ? `Importeret lokalt - Cloud-fejl (${cloudError?.code || "ukendt"})`
+          : "Importeret lokalt - log ind for Cloud-synkronisering";
       alert(`"${program.title}" er oprettet med ${program.days.length} ${program.days.length === 1 ? "dag" : "dage"}.`);
       return importRecord;
     }
@@ -11035,6 +11114,7 @@
   <script src="exercise-animation/animations.js?v=20260716-mannequin-prototype1"></script>
   <script src="exercise-animation/mannequin.js?v=20260716-mannequin-prototype1"></script>
   <script src="exercise-animation-model.js?v=20260716-professional-three1"></script>
+  <script src="exercise-demo-router.js?v=20260811-external-demo1"></script>
   <script type="module" src="exercise-animation-3d-renderer.js?v=20260716-professional-three1"></script>
   <script src="dashboard-view-model.js?v=20260718-dashboard-buttons1"></script>
   <script src="workout-heatmap.js?v=20260718-heatmap1"></script>
@@ -11043,7 +11123,8 @@
   <script src="storage-scope.js?v=20260621-cloud-primary1"></script>
   <script src="training-goal-engine.js?v=20260716-cardio-empty-time1"></script>
   <script src="workout-program-store.js"></script>
-  <script src="screenshot-import.js?v=20260710-reps-input1"></script>
+  <script src="screenshot-import-semantic.js?v=20260811-ocr-semantic1"></script>
+  <script src="screenshot-import.js?v=20260811-ocr-semantic1"></script>
   <script src="wizard-store.js?v=20260718-profile-cloud1"></script>
   <script src="calorie-estimator.js"></script>
   <script src="ai-system.js?v=20260715-exercise-animations1"></script>
@@ -11061,7 +11142,8 @@
   <script src="stripe-config.js?v=20260711-permanent-admin1"></script>
   <script src="membership.js?v=20260809-direct-navigation1"></script>
   <script type="module" src="firebase-config.js?v=20260715-exercise-animations1"></script>
-  <script type="module" src="exercise-animation-cloud-service.js?v=20260716-backend-admin-read1"></script>
+  <script type="module" src="screenshot-import-ai-service.js?v=20260811-ocr-semantic1"></script>
+  <script type="module" src="exercise-animation-cloud-service.js?v=20260811-external-demo1"></script>
   <script type="module" src="stripe-checkout.js?v=20260713-admin-subscription-test1"></script>
   <script type="module" src="auth-service.js?v=20260713-stripe-google-login1"></script>
   <script type="module" src="firestore-cloud-service.js?v=20260726-permission-retry1"></script>
@@ -11069,7 +11151,7 @@
   <script>
     if ("serviceWorker" in navigator && window.isSecureContext) {
       window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./service-worker.js?v=20260810-user-menu1").catch(error => {
+        navigator.serviceWorker.register("./service-worker.js?v=20260811-external-demo1").catch(error => {
           console.warn("Work4it kunne ikke aktivere offline app-shell.", error);
         });
       });

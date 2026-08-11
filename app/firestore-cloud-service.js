@@ -1297,6 +1297,20 @@ window.FirestoreDataService = {
     ]));
     return entry;
   },
+  async saveImportDataToCloud(entry) {
+    const uid = await requireCloudUser("Gem screenshot-import");
+    if (!entry?.id) throw new Error("Importposten mangler et id.");
+    const path = ["users", uid, COLLECTIONS.imports, String(entry.id)];
+    try {
+      await upsertDocument(doc(db, ...path), entry);
+      localFingerprint = currentLocalFingerprint();
+      return true;
+    } catch (error) {
+      reportFirestoreError("saveImportDataToCloud", path, error, uid);
+      setCloudState(isConnectivityError(error) ? "offline" : "error", error);
+      throw error;
+    }
+  },
   refreshPricingConfig: loadPublicPricingConfig,
   deleteDeletedProgram: async programId => {
     if (!activeUid || !programId) return false;

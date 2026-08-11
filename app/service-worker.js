@@ -1,4 +1,4 @@
-const CACHE_NAME = "work4it-shell-v148-workout-view1";
+const CACHE_NAME = "work4it-shell-v150-external-demo1";
 const ANIMATION_CACHE_NAME = "work4it-exercise-animations-v1";
 const APP_SHELL = [
   "./",
@@ -9,6 +9,7 @@ const APP_SHELL = [
   "./exercise-animation/animations.js?v=20260716-mannequin-prototype1",
   "./exercise-animation/mannequin.js?v=20260716-mannequin-prototype1",
   "./exercise-animation-model.js?v=20260716-professional-three1",
+  "./exercise-demo-router.js?v=20260811-external-demo1",
   "./exercise-animation-3d-renderer.js?v=20260716-professional-three1",
   "./dashboard-view-model.js?v=20260718-dashboard-buttons1",
   "./workout-heatmap.js?v=20260718-heatmap1",
@@ -29,7 +30,8 @@ const APP_SHELL = [
   "./calorie-estimator.js?v=20260615-cardio1",
   "./training-goal-engine.js?v=20260716-cardio-empty-time1",
   "./workout-program-store.js?v=20260615-days1",
-  "./screenshot-import.js?v=20260710-reps-input1",
+  "./screenshot-import-semantic.js?v=20260811-ocr-semantic1",
+  "./screenshot-import.js?v=20260811-ocr-semantic1",
   "./wizard-store.js?v=20260718-profile-cloud1",
   "./daily-start-wizard.js?v=20260615-window1",
   "./wizard-controller.js?v=20260622-fixed-routing1",
@@ -46,7 +48,8 @@ const APP_SHELL = [
   "./profile-account.js?v=20260810-user-menu1",
   "./profile-wizard.js?v=20260810-user-menu1",
   "./firebase-config.js?v=20260715-exercise-animations1",
-  "./exercise-animation-cloud-service.js?v=20260716-backend-admin-read1",
+  "./screenshot-import-ai-service.js?v=20260811-ocr-semantic1",
+  "./exercise-animation-cloud-service.js?v=20260811-external-demo1",
   "./auth-service.js?v=20260713-stripe-google-login1",
   "./firestore-cloud-service.js?v=20260726-permission-retry1"
 ];

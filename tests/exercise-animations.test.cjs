@@ -51,7 +51,7 @@ const pending = animations.normalizeMetadata({ exerciseId: id, generationStatus:
 assert.equal(pending.generationStatus, "pending_review");
 assert.equal(animations.validateMetadata({ ...pending, generationStatus: "approved" }).valid, false, "Godkendelse kr\u00e6ver medie");
 
-assert.ok(indexSource.includes("Work4itExerciseAnimations?.openViewer"), "Demo bruger intern viewer");
+assert.ok(indexSource.includes("Work4itExerciseDemo?.open"), "Demo bruger den centrale resolver");
 assert.ok(modelSource.includes("canvas.captureStream(24)"), "Canvas-animation optages som video");
 assert.ok(modelSource.includes("new MediaRecorder"), "Browserens medieencoder bruges");
 assert.ok(modelSource.includes("engine.create(canvas, specification)"), "Videoen renderes med 3D-motoren");
@@ -63,7 +63,7 @@ assert.ok(renderer3dSource.includes("PCFSoftShadowMap"), "3D-scenen bruger blød
 assert.ok(renderer3dSource.includes("applyPushUpPose"), "Push-Up har øvelsesspecifik poseberegning");
 assert.ok(renderer3dSource.includes("length / 3"), "3D-led skaleres efter deres reelle længde");
 assert.ok(modelSource.includes("uploadVersionMedia(exercise.exerciseId, saved.version"), "Genereret video uploades automatisk");
-assert.ok(!/google\.com\/search\?tbm=vid/.test(indexSource), "Eksternt Demo-link er fjernet");
+assert.ok(indexSource.includes("exercise-demo-router.js"), "Ekstern fallback og intern prioritering indlæses separat");
 assert.ok(indexSource.includes("exercise-animation-cloud-service.js"), "Cloud-laget indl\u00e6ses");
 assert.ok(cloudSource.includes('ROOT_COLLECTION = "exerciseAnimations"'));
 assert.ok(cloudSource.includes('STORAGE_ROOT = "exercise-animations"'));
@@ -106,8 +106,7 @@ assert.doesNotMatch(mannequinSource, /THREE|fetch\(|\.gif|<canvas/i, "SVG-protot
 assert.match(mannequinCss, /#f97316/i, "Work4its orange prototypefarve bruges til muskler og pile");
 assert.match(mannequinCss, /@media \(max-width: 640px\)/);
 assert.match(mannequinCss, /@media \(prefers-reduced-motion: reduce\)/);
-assert.match(indexSource, /Work4itMannequin\?\.supports\?\.\(exerciseName\)/, "De tre prototyper åbnes direkte på øvelseskortet");
-assert.match(indexSource, /Work4itExerciseAnimations\?\.openViewer/, "Andre øvelser beholder det eksisterende demo-flow");
+assert.match(indexSource, /Work4itExerciseDemo\?\.open/, "Alle øvelser bruger samme Demo-flow");
 assert.match(workerSource, /exercise-animation\/mannequin\.js\?v=20260716-mannequin-prototype1/, "Prototypen caches i PWA app-shell");
 
 console.log("Exercise animation phase 1 tests passed");

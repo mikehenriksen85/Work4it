@@ -8,6 +8,7 @@ const { setGlobalOptions } = require("firebase-functions/v2");
 const Stripe = require("stripe");
 const { normalizeAdminTestMode, subscriptionTestPolicy } = require("./subscription-test-policy");
 const { canonicalCheckoutLineItem } = require("./stripe-pricing-policy");
+const { interpretWithVertex, validateRequest: validateScreenshotOcrRequest } = require("./screenshot-ocr-ai");
 
 admin.initializeApp();
 setGlobalOptions({ region: "europe-west1", maxInstances: 10 });
@@ -54,8 +55,62 @@ const ALLOWED_ORIGINS = new Set([
   "http://127.0.0.1:8767"
 ]);
 
+exports.interpretWorkoutScreenshotOcr = onCall({
+  region: "europe-west1",
+  timeoutSeconds: 90,
+  memory: "512MiB",
+  cors: [...ALLOWED_ORIGINS]
+}, async request => {
+  if (!request.auth?.uid) throw new HttpsError("unauthenticated", "Du skal være logget ind for at bruge AI-fortolkning.");
+  try {
+    validateScreenshotOcrRequest(request.data || {});
+    let usage = null;
+    const response = await interpretWithVertex(request.data || {}, {
+      beforeRequest: async () => {
+        usage = await reserveAiRequest(request.auth.uid, request.auth.token?.email);
+      }
+    });
+    console.info("[Work4it OCR AI] fortolkning gennemført", {
+      uid: request.auth.uid,
+      ...response.diagnostics,
+      model: response.model
+    });
+    return { ...response, usage };
+  } catch (error) {
+    console.error("[Work4it OCR AI] fortolkning fejlede", {
+      uid: request.auth.uid,
+      code: error?.code || "internal",
+      message: error?.message || String(error || "Ukendt fejl")
+    });
+    if (error instanceof HttpsError) throw error;
+    if (/tom|for lang|katalog/i.test(error?.message || "")) throw new HttpsError("invalid-argument", error.message);
+    throw new HttpsError("internal", "AI-fortolkningen kunne ikke gennemføres. Work4it bruger lokal fallback.");
+  }
+});
+
 function isPermanentAdminEmail(email) {
   return ADMIN_EMAILS.has(String(email || "").trim().toLowerCase());
+}
+
+async function reserveAiRequest(uid, email) {
+  if (isPermanentAdminEmail(email)) return { unlimited: true, used: 0, remaining: null };
+  const membershipRef = admin.firestore().doc(`users/${uid}/membership/main`);
+  return admin.firestore().runTransaction(async transaction => {
+    const snapshot = await transaction.get(membershipRef);
+    const membership = snapshot.exists ? snapshot.data() || {} : {};
+    const limit = Math.max(0, Number(membership.aiRequestLimit) || 0);
+    const used = Math.max(0, Number(membership.aiRequestsUsed) || 0);
+    if (!limit || used >= limit) {
+      throw new HttpsError("resource-exhausted", "Du har ingen AI Requests tilbage i denne periode.");
+    }
+    const nextUsed = used + 1;
+    transaction.set(membershipRef, {
+      aiRequestsUsed: nextUsed,
+      lastRequestTimestamp: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+    return { unlimited: false, used: nextUsed, remaining: Math.max(0, limit - nextUsed), limit };
+  });
 }
 
 function isAdminRequest(request) {
