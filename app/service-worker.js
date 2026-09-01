@@ -1,4 +1,4 @@
-const CACHE_NAME = "work4it-shell-v150-external-demo1";
+const CACHE_NAME = "work4it-shell-v151-ai-coach-program1";
 const ANIMATION_CACHE_NAME = "work4it-exercise-animations-v1";
 const APP_SHELL = [
   "./",
@@ -38,8 +38,9 @@ const APP_SHELL = [
   "./stripe-config.js?v=20260712-home-center1",
   "./membership.js?v=20260809-direct-navigation1",
   "./stripe-checkout.js?v=20260713-admin-subscription-test1",
-  "./ai-system.js?v=20260715-exercise-animations1",
-  "./ai-copilot-actions.js?v=20260713-ai-coach1",
+  "./ai-system.js?v=20260823-concrete-program1",
+  "./ai-coach-program-engine.js?v=20260823-concrete-program1",
+  "./ai-copilot-actions.js?v=20260823-concrete-program1",
   "./ai-request-counter.js?v=20260713-stripe-google-login1",
   "./help-content-config.js?v=20260628-help1",
   "./password-visibility.js?v=20260621-password-toggle1",
@@ -51,7 +52,7 @@ const APP_SHELL = [
   "./screenshot-import-ai-service.js?v=20260811-ocr-semantic1",
   "./exercise-animation-cloud-service.js?v=20260811-external-demo1",
   "./auth-service.js?v=20260713-stripe-google-login1",
-  "./firestore-cloud-service.js?v=20260726-permission-retry1"
+  "./firestore-cloud-service.js?v=20260823-ai-program-save1"
 ];
 
 self.addEventListener("install", event => {

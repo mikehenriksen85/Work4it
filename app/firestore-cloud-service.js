@@ -302,11 +302,18 @@ function authUid() {
   return window.FirebaseAuthService?.getCurrentUser?.()?.uid || "";
 }
 
+function firebaseSdkUid() {
+  return auth.currentUser?.uid || "";
+}
+
 function reportFirestoreError(operation, pathSegments, error, uid = activeUid || authUid()) {
   console.error("Work4it Firestore-fejl", {
     operation,
     path: firestorePath(pathSegments),
     uid: uid || null,
+    currentUserUid: authUid() || null,
+    firebaseSdkUid: firebaseSdkUid() || null,
+    activeCloudUid: activeUid || null,
     code: error?.code || "unknown",
     message: error?.message || String(error || "Ukendt fejl")
   });
@@ -315,11 +322,14 @@ function reportFirestoreError(operation, pathSegments, error, uid = activeUid ||
 function assertCloudUser(operation = "Firestore") {
   const uid = activeUid || "";
   const authenticatedUid = authUid();
+  const sdkUid = firebaseSdkUid();
   if (!uid || !cloudEnabled) {
     throw new Error(`${operation}: Cloud er ikke klar. Vent på login og prøv igen.`);
   }
-  if (!authenticatedUid || authenticatedUid !== uid) {
-    throw new Error(`${operation}: Firebase Auth UID er ikke klar eller matcher ikke aktiv cloud-session.`);
+  if (!authenticatedUid || authenticatedUid !== uid || !sdkUid || sdkUid !== uid) {
+    const error = new Error(`${operation}: Work4it-bruger, Firebase SDK-bruger og aktiv cloud-session har ikke samme UID.`);
+    error.code = "auth/uid-mismatch";
+    throw error;
   }
   return uid;
 }
@@ -330,6 +340,13 @@ async function requireCloudUser(operation = "Firestore") {
   if (!uid) {
     const error = new Error(`${operation}: Brugeren er ikke logget ind med et gyldigt Firebase UID.`);
     error.code = "auth/user-not-authenticated";
+    throw error;
+  }
+  await auth.authStateReady?.();
+  if (firebaseSdkUid() !== uid) {
+    const error = new Error(`${operation}: Firebase SDK UID matcher ikke den indloggede Work4it-bruger.`);
+    error.code = "auth/uid-mismatch";
+    reportFirestoreError(operation, ["users", uid], error, uid);
     throw error;
   }
   const pendingInitialization = initializationByUid.get(uid);
@@ -589,6 +606,35 @@ async function saveProgramsToCloud(programs, uid = activeUid) {
   if (cloudState !== "initializing") setCloudState("ready");
   window.dispatchEvent(new CustomEvent("firestore:programs-saved", {
     detail: { uid, count: values.length, path: `users/${uid}/${COLLECTIONS.workouts}` }
+  }));
+  return true;
+}
+
+async function saveProgramToCloud(program) {
+  const uid = await requireCloudUser("Gem AI-genereret træningsprogram");
+  const normalized = normalizeProgramForCloud(program, 0);
+  const path = ["users", uid, COLLECTIONS.workouts, normalized.id];
+  if (!normalized.id) {
+    const error = new Error("Gem AI-genereret træningsprogram: Programmet mangler et stabilt id.");
+    error.code = "firestore/invalid-program-id";
+    reportFirestoreError("saveProgramToCloud", path, error, uid);
+    throw error;
+  }
+  try {
+    await writeProgramToCollection(uid, normalized, 0, COLLECTIONS.workouts);
+  } catch (error) {
+    reportFirestoreError("saveProgramToCloud", path, error, uid);
+    setCloudState(isConnectivityError(error) ? "offline" : "error", error);
+    throw error;
+  }
+  localFingerprint = currentLocalFingerprint();
+  if (cloudState !== "initializing") setCloudState("ready");
+  window.dispatchEvent(new CustomEvent("firestore:program-saved", {
+    detail: {
+      uid,
+      programId: normalized.id,
+      path: firestorePath(path)
+    }
   }));
   return true;
 }
@@ -1264,6 +1310,7 @@ window.FirestoreDataService = {
   },
   syncAllLocalData,
   saveProgramsToCloud,
+  saveProgramToCloud,
   clearActiveWorkout,
   hydrateFromFirestore,
   saveExerciseHistoryToCloud: async history => {

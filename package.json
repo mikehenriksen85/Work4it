@@ -9,7 +9,7 @@
     "prestart": "npm run sync:assets",
     "start": "node serve.cjs",
     "test:assets": "npm run sync:assets && node tests/official-assets.test.cjs",
-    "test:ai-coach": "node tests/ai-coach.test.cjs",
+    "test:ai-coach": "node tests/ai-coach.test.cjs && node tests/ai-coach-program.test.cjs",
     "test:subscriptions": "node tests/admin-subscription-test.test.cjs && node tests/pricing-consistency.test.cjs",
     "test:cloud-storage": "node tests/cloud-storage.test.cjs && node tests/profile-cloud-save.test.cjs",
     "test:dashboard": "node tests/dashboard-view-model.test.cjs && node tests/workout-heatmap.test.cjs && node tests/dashboard-ui.test.cjs && node tests/modern-dashboard-ui.test.cjs && node tests/workout-routing.test.cjs",

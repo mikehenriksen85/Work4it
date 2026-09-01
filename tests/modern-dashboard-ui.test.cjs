@@ -251,8 +251,8 @@ assert.match(html, /profile-wizard\.js\?v=20260810-user-menu1/);
 assert.match(html, /membership\.js\?v=20260809-direct-navigation1/);
 assert.match(html, /workit-menu-manager\.js\?v=20260810-workout-view1/);
 assert.match(html, /auth-gate\.js\?v=20260810-workout-view1/);
-assert.match(html, /service-worker\.js\?v=20260811-external-demo1/);
-assert.match(serviceWorker, /work4it-shell-v150-external-demo1/);
+assert.match(html, /service-worker\.js\?v=20260823-ai-coach-program1/);
+assert.match(serviceWorker, /work4it-shell-v151-ai-coach-program1/);
 for (const asset of ["modern-dashboard-ui.css", "modern-dashboard-ui.js"])
   assert.match(serviceWorker, new RegExp(`${asset.replace(".", "\\.")}\\?v=20260810-workout-view1`));
 assert.match(serviceWorker, /work4it-icons\.js\?v=20260722-icon-system1/);

@@ -180,7 +180,8 @@
       return { action: "optimizeWorkout", mode, originalInput: command };
     }
 
-    const programIntent = /(lav|generér|generer|opret|foreslå|create|generate|suggest).*(program|træningspas|workout)/i.test(text);
+    const programIntent = /(lav|generér|generer|opret|foreslå|byg|create|generate|suggest|build).*(program|træningspas|workout)/i.test(text)
+      || /(jeg vil (gerne )?have|jeg ønsker|jeg skal bruge|jeg har brug for|i want|i need).*(program|træningspas|workout)/i.test(text);
     if (programIntent) {
       const goal = /vægttab|weight loss/.test(text) ? "weight_loss"
         : /muskel|hypertrophy/.test(text) ? "muscle_gain"

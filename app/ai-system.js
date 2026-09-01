@@ -1,7 +1,7 @@
 (function work4itAiSystemModule() {
   "use strict";
 
-  const VERSION = "2.0.0";
+  const VERSION = "2.1.0";
   const HEALTH_SAFETY_NOTICE = "Ved smerter, skade eller usikkerhed bør du kontakte læge eller fysioterapeut.";
   const MAX_HISTORY_ITEMS = 20;
   const REQUEST_USAGE_KEY = "ai_request_usage_v1";
@@ -31,6 +31,10 @@
         "Hold styrke, cardio og træningssplit adskilt, medmindre brugeren aktivt vælger en kombination.",
         "Tilpas sæt, reps og pauser efter målet og undgå urealistisk volumen.",
         "Tag højde for prioriterede mål, træningsstil, udstyr, tid og brugerens begrænsninger.",
+        "Returnér altid et konkret programobjekt med name/title, goal, category, programType, durationMinutes og mindst én day med ordnede exercises.",
+        "Hver øvelse skal have order, et eksakt katalognavn, muskelgruppe og mindst ét sæt med targetReps og pause/pauseSeconds.",
+        "Svar som 'opret det foreslåede program' uden konkrete øvelser er ugyldige og skal afvises eller genereres igen.",
+        "Opfind ikke startvægt. Bevar en tom vægt, når brugerhistorikken ikke indeholder en sikker værdi.",
         "Vis programmet som et forslag og kræv godkendelse før oprettelse eller overskrivning.",
         "Overskriv ikke et eksisterende program uden en udtrykkelig generér/opret-kommando."
       ]

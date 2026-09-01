@@ -73,9 +73,9 @@ assert.match(indexSource, /function openExerciseDemo\(slot\)[\s\S]*Work4itExerci
 assert.match(indexSource, /data-exercise-action="demo"/);
 assert.match(indexSource, /block\.dataset\.demoUrl = plan\.demoUrl \|\| plan\.videoUrl \|\| plan\.youtubeUrl/, "Eksisterende øvelseslinks bevares");
 assert.match(indexSource, /demoUrl: block\.dataset\.demoUrl \|\| ""/, "Eksisterende øvelseslinks gemmes med programmet");
-assert.match(indexSource, /service-worker\.js\?v=20260811-external-demo1/, "PWA'en registrerer den nye worker-version straks");
+assert.match(indexSource, /service-worker\.js\?v=20260823-ai-coach-program1/, "PWA'en registrerer den nye worker-version straks");
 assert.match(workerSource, /exercise-demo-router\.js\?v=20260811-external-demo1/, "Demo-resolveren caches af PWA'en");
-assert.match(workerSource, /work4it-shell-v150-external-demo1/, "PWA app-shell-versionen er løftet");
+assert.match(workerSource, /work4it-shell-v151-ai-coach-program1/, "PWA app-shell-versionen er løftet");
 assert.match(cloudSource, /function peekAnimation\(exerciseId\)/, "Godkendt animationsmetadata kan prioriteres synkront");
 assert.match(cloudSource, /primeAnimation/, "Animationsmetadata kan forudindlæses uden at ændre Demo-arkitekturen");
 

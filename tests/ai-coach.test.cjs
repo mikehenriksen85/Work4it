@@ -40,6 +40,7 @@ const cases = [
   ["Lav et Stabilitet-program", { action: "suggestProgram", programType: "stability" }],
   ["Opret et Cardio-program på 30 minutter", { action: "suggestProgram", programType: "cardio", durationMinutes: 30 }],
   ["Opret et Calisthenics-program", { action: "suggestProgram", programType: "calisthenics" }],
+  ["Jeg vil gerne have et program til muskelopbygning", { action: "suggestProgram", goal: "muscle_gain" }],
   ["Flyt Barbell Row før Barbell Bench Press", { action: "reorderExercise", position: "before" }],
   ["Sæt sæt 2 i Barbell Bench Press til 80 kg, 8 reps og 90 sek", { action: "updateExerciseSet", setNumber: 2, weightKg: 80, reps: 8, pause: "90 sek" }],
   ["Sæt pausen for Barbell Row til 2 min", { action: "updateExercisePause", value: "2 min" }],
